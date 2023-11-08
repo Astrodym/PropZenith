@@ -274,11 +274,18 @@ public partial class AstroProp_Runtime : Node3D
             );
         Godot.OrmMaterial3D LineMat = new Godot.OrmMaterial3D();
         LineMat.ShadingMode = BaseMaterial3D.ShadingModeEnum.PerPixel; //LineMat.ShadingMode = BaseMaterial3D.ShadingModeEnum.Unshaded;
+        //LineMat.DistanceFadeMaxDistance = 100;
+        //LineMat.DistanceFadeMinDistance = -80;
+        //LineMat.DistanceFadeMode = BaseMaterial3D.DistanceFadeModeEnum.PixelAlpha;
         LineMat.EmissionEnabled = true;
         LineMat.DisableAmbientLight = true;
         LineMat.DisableReceiveShadows = true;
         LineMat.Emission = Color.FromHtml("#FF14AF");
         LineMat.EmissionIntensity = 10;
+        LineMat.Roughness = 1;
+        LineMat.MetallicSpecular = 0;
+        
+        //LineMat.SpecularMode = BaseMaterial3D.SpecularModeEnum.Toon;
         
         LineMat.AlbedoColor = Color.FromHtml("#FF14AF");
 
@@ -318,7 +325,7 @@ public partial class AstroProp_Runtime : Node3D
             //GD.Print(i);
             ProjectOry.Trajectory.Add(((int)Iter_Frame.MET), Iter_Frame); // store instantaneous trajectory data here 
 
-            if ((NewGlobalSpace -LastVertexPosGlobalSpace).Length() > .1)
+            if ((NewGlobalSpace -LastVertexPosGlobalSpace).Length() > .05)
             {
                 LastVertexPosGlobalSpace = NewGlobalSpace;
                 ProjectOry.TrackStripMesh.SurfaceAddVertex(NewGlobalSpace);
@@ -504,7 +511,7 @@ public partial class AstroProp_Runtime : Node3D
 
             Godot.Vector3 NewGlobalSpace = NewFrame.PosCartesian * (float)ScaleConversion("ToUnityUnits");
             
-            if (System.Math.Abs((NewGlobalSpace - LastVertexPosGlobalSpace).Length())< .03)
+            if (System.Math.Abs((NewGlobalSpace - LastVertexPosGlobalSpace).Length()) > .15)
             {
                 LastVertexPosGlobalSpace = NewGlobalSpace;
                 TrackStripMesh.SurfaceAddVertex(NewGlobalSpace);
@@ -801,11 +808,11 @@ public partial class AstroProp_Runtime : Node3D
     }
     public void GrowTrack(NBodyAffected Object, int MET)
     {
-
+         // simple, straightforwards.
     }
     public void TrimTrack(NBodyAffected Object, int MET)
     {
-
+        // you will need to entirely reassemble the mesh if you want to remove one vertice
     }
     void BeginStepOps()
     {
@@ -895,7 +902,7 @@ public partial class AstroProp_Runtime : Node3D
             "Sagitta",
             "a spaceship",
             new Godot.Vector3(0, 0, 6789000), //6789000 iss altitude meters
-            new Godot.Vector3(-7600 - 2800, -2000, 0)* (float)1.013, //-6576 iss velocity m/s
+            new Godot.Vector3(0, 7600+3000, 0)* (float)1.01235, //-6576 iss velocity m/s
             new Godot.Vector3(0, 0, 0) // zero propulsion
 
 
