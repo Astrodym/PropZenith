@@ -1,0 +1,103 @@
+[gd_scene load_steps=11 format=3 uid="uid://m72oaa82j0x7"]
+
+[ext_resource type="Script" path="res://Scripts/AstroProp_Runtime.cs" id="1_o5ibn"]
+[ext_resource type="SphereMesh" uid="uid://hvpsax33j75w" path="res://Prefabs/SOIbasic.tres" id="3_yje6v"]
+[ext_resource type="Script" path="res://FreecamScript.gd" id="4_fh5v0"]
+[ext_resource type="Shader" uid="uid://diy6hc1jsalyx" path="res://Shaders/PlaceholderShader.tres" id="4_svrnh"]
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_c0u11"]
+render_priority = 0
+shader = ExtResource("4_svrnh")
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_4inap"]
+albedo_color = Color(0.411765, 0.627451, 0.984314, 1)
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_q8tf5"]
+albedo_color = Color(1, 0.219608, 0.0784314, 1)
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_w1lmu"]
+render_priority = 0
+shader = ExtResource("4_svrnh")
+
+[sub_resource type="Environment" id="Environment_tpq1j"]
+background_mode = 1
+ambient_light_source = 2
+ambient_light_color = Color(0.0352941, 0.0588235, 0.160784, 1)
+ambient_light_energy = 1.63
+ssil_radius = 6.51
+sdfgi_use_occlusion = true
+sdfgi_cascades = 1
+sdfgi_max_distance = 25.6
+glow_enabled = true
+glow_intensity = 3.0
+glow_strength = 0.5
+glow_bloom = 0.17
+glow_blend_mode = 0
+glow_hdr_threshold = 4.0
+glow_map_strength = 0.0
+volumetric_fog_density = 0.005
+volumetric_fog_albedo = Color(0.317647, 0.0980392, 0.113725, 1)
+
+[sub_resource type="CameraAttributesPractical" id="CameraAttributesPractical_1wmyw"]
+
+[node name="Astrogation" type="Node3D"]
+script = ExtResource("1_o5ibn")
+metadata/TimeCompression = 1.0
+
+[node name="Global" type="Node3D" parent="."]
+
+[node name="Moon" type="Node3D" parent="Global"]
+editor_description = "This is a test to discover if the nodepath even fucking works"
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 17.5694, 0, -13.5365)
+
+[node name="Moon" type="MeshInstance3D" parent="Global/Moon"]
+transform = Transform3D(2.73, 0, 0, 0, 2.73001, 0, 0, 0, 2.73, 0, 0, 0)
+mesh = ExtResource("3_yje6v")
+skeleton = NodePath("../../..")
+surface_material_override/0 = SubResource("ShaderMaterial_c0u11")
+
+[node name="Earth" type="Node3D" parent="Global"]
+
+[node name="Earth" type="MeshInstance3D" parent="Global/Earth"]
+transform = Transform3D(10, 0, 0, 0, 10, 0, 0, 0, 10, 0, 0, 0)
+mesh = ExtResource("3_yje6v")
+skeleton = NodePath("../../..")
+surface_material_override/0 = SubResource("StandardMaterial3D_4inap")
+
+[node name="Sagitta" type="Node3D" parent="Global"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 5.322, 0, 0)
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="Global/Sagitta"]
+mesh = ExtResource("3_yje6v")
+surface_material_override/0 = SubResource("StandardMaterial3D_q8tf5")
+
+[node name="TrackBasic" type="Node3D" parent="Global"]
+
+[node name="Segment" type="MeshInstance3D" parent="Global/TrackBasic"]
+visible = false
+extra_cull_margin = 9.2
+mesh = ExtResource("3_yje6v")
+surface_material_override/0 = SubResource("ShaderMaterial_w1lmu")
+
+[node name="Local" type="Node3D" parent="."]
+
+[node name="Camera3D" type="Camera3D" parent="."]
+transform = Transform3D(0.296575, 0, 0.95501, 0, 1, 0, -0.95501, 0, 0.296575, 5.79629, 6.80714, -9.03228)
+current = true
+script = ExtResource("4_fh5v0")
+
+[node name="WorldEnvironment" type="WorldEnvironment" parent="."]
+environment = SubResource("Environment_tpq1j")
+camera_attributes = SubResource("CameraAttributesPractical_1wmyw")
+
+[node name="DirectionalLight3D" type="DirectionalLight3D" parent="."]
+transform = Transform3D(-0.996849, 0, 0.0793289, 0, 1, 0, -0.0793289, 0, -0.996849, 0, 0, 0)
+light_energy = 1.161
+shadow_enabled = true
+
+[node name="Control" type="Control" parent="."]
+layout_mode = 3
+anchors_preset = 0
+offset_right = 40.0
+offset_bottom = 40.0
+metadata/TimeCompression = 0.0

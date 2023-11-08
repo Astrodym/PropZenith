@@ -1,4 +1,4 @@
-// Jonathan C. Ross 
+// Jonathan (JC) Ross 
 // 09 01 2023 C
 
 
@@ -159,6 +159,19 @@ public partial class AstroProp_Runtime : Node3D
         public Godot.Vector3 VelCartesian = new Godot.Vector3();
 
         public double AxialRotation = 0;
+
+        public DiscreteTimestep Clone()
+        {
+            DiscreteTimestep DTClone = new DiscreteTimestep();
+
+            DTClone.MET = this.MET;
+            DTClone.PosCartesian = this.PosCartesian;
+            DTClone.VelCartesian = this.VelCartesian;
+            DTClone.AxialRotation = this.AxialRotation;
+
+            return DTClone;
+        }
+
     }
     public class SegmentStepFrame
     {
@@ -288,7 +301,8 @@ public partial class AstroProp_Runtime : Node3D
         //GD.Print(ProjectOry.StartMET, ProjectOry.InterruptMET);
         //GD.Print(LS_P);
         
-        ProjectOry.Trajectory = new Dictionary<int,SegmentStepFrame>(10000000);
+        ProjectOry.Trajectory = new Dictionary<int, SegmentStepFrame>(10000000);
+        Godot.Vector3 LastVertexPosGlobalSpace = LS_P * (float)ScaleConversion("ToUnityUnits");
         for (int i = ProjectOry.StartMET; i < ProjectOry.InterruptMET; i++)
         {
             if (i == ProjectOry.InterruptMET-1)
@@ -299,10 +313,17 @@ public partial class AstroProp_Runtime : Node3D
             
             SY4(ref LS_P, ref LS_V, ProjectOry.StateVectors.InstantaneousAccel, i);
             SegmentStepFrame Iter_Frame = new SegmentStepFrame(i, LS_P, LS_V, ProjectOry.StateVectors.InstantaneousAccel, false);
+            Godot.Vector3 NewGlobalSpace = LS_P * (float)ScaleConversion("ToUnityUnits");
             //GD.Print(LS_V);
             //GD.Print(i);
-            ProjectOry.Trajectory.Add((int)Iter_Frame.MET, Iter_Frame); // store instantaneous trajectory data here 
-            ProjectOry.TrackStripMesh.SurfaceAddVertex(LS_P * (float)ScaleConversion("ToUnityUnits"));
+            ProjectOry.Trajectory.Add(((int)Iter_Frame.MET), Iter_Frame); // store instantaneous trajectory data here 
+
+            if ((NewGlobalSpace -LastVertexPosGlobalSpace).Length() > .1)
+            {
+                LastVertexPosGlobalSpace = NewGlobalSpace;
+                ProjectOry.TrackStripMesh.SurfaceAddVertex(NewGlobalSpace);
+            }
+           
             //ProjectOry.TrackStripMesh.SurfaceAddVertex(LS_P*(float)ScaleConversion("ToUnityUnits"));
             // GD.Print(LS_P * (float)ScaleConversion("ToUnityUnits"));
         };
@@ -339,7 +360,7 @@ public partial class AstroProp_Runtime : Node3D
             Vessel.StateVectors.VelCartesian,
             new Godot.Vector3(),
             (int)Reference.Dynamics.MET,
-            60*60*24*4
+            60*60*24*15
             //(int)(OrbitalPeriod * 1.5)
             );
         SetUpProjectOry(ref Vessel.Trajectory, Vessel.ObjectRef);
@@ -385,10 +406,11 @@ public partial class AstroProp_Runtime : Node3D
         public string Description;
 
         public Node3D ObjectRef;//   = GetNode<Node>("Global/Earth");
+        public MeshInstance3D TrackRef;
 
         //public int FirstMET_Timestamp = 0; // since celestials are set up immediately on run -- redundant lmfao
         public DiscreteTimestep EphemerisMET_Last = new DiscreteTimestep();
-        public Dictionary<int,DiscreteTimestep> Ephemeris = new Dictionary<int,DiscreteTimestep>(10000000); // the integer key is going to be the MET of the timestep, just to make shit easier.
+        public Dictionary<int, DiscreteTimestep> Ephemeris = new Dictionary<int, DiscreteTimestep>(10000000); // the integer key is going to be the MET of the timestep, just to make shit easier.
 
 
 
@@ -444,39 +466,78 @@ public partial class AstroProp_Runtime : Node3D
     public void ProjectCelestial(ref CelestialRender SOI) // run this only once
     {
         DiscreteTimestep StartFrame = new DiscreteTimestep();
-        GD.Print(StartFrame.MET);
+        //GD.Print(StartFrame.MET);
         ModStateVector_Kep(SOI, StartFrame.MET, ref StartFrame.PosCartesian, ref StartFrame.VelCartesian);
-        SOI.Ephemeris.Add(StartFrame.MET,StartFrame);
-
+        SOI.Ephemeris.Add((StartFrame.MET),StartFrame);
         int Period = (int)CalculateOrbital(new Godot.Vector3(), StartFrame.PosCartesian, new Godot.Vector3(), StartFrame.VelCartesian, Reference.SOI.MainReference.GravitationalParameter);
-
         int MaxFrames = (int)(Period / Reference.Dynamics.TimeStep);
+        DiscreteTimestep LastFrame = StartFrame.Clone();
 
-        DiscreteTimestep LastFrame = StartFrame;
+        Godot.OrmMaterial3D LineMat = new Godot.OrmMaterial3D();
+        LineMat.ShadingMode = BaseMaterial3D.ShadingModeEnum.PerPixel; //LineMat.ShadingMode = BaseMaterial3D.ShadingModeEnum.Unshaded;
+        LineMat.EmissionEnabled = true;
+        LineMat.DisableAmbientLight = true;
+        LineMat.DisableReceiveShadows = true;
+        LineMat.Emission = Color.FromHtml("#00FFFF");
+        LineMat.EmissionIntensity = 10;
+        LineMat.AlbedoColor = Color.FromHtml("#00FFFF");
+        SOI.TrackRef = new Godot.MeshInstance3D(); // the track itself
+        MeshInstance3D TrackRef = SOI.TrackRef;
+        ImmediateMesh TrackStripMesh = new Godot.ImmediateMesh();
+        TrackStripMesh.SurfaceBegin(Godot.Mesh.PrimitiveType.LineStrip, LineMat);
+        TrackRef.Mesh = TrackStripMesh;
+
+        Godot.Vector3 LastVertexPosGlobalSpace = StartFrame.PosCartesian * (float)ScaleConversion("ToUnityUnits");
+        TrackStripMesh.SurfaceAddVertex(StartFrame.PosCartesian * (float)ScaleConversion("ToUnityUnits"));
+
         for (int i = 1; i <= Reference.Dynamics.EphemerisCeiling; i++)
         {
-            DiscreteTimestep NewFrame = LastFrame;
-           
-            NewFrame.MET += (int)Reference.Dynamics.TimeStep;
-            //GD.Print(NewFrame.MET + "  ", i);
+            DiscreteTimestep NewFrame = LastFrame.Clone(); //you are SHALLOW-COPYING here, need to DEEP-COPY -- NVM, SOLVED
+
+             NewFrame.MET += (int)Reference.Dynamics.TimeStep;
+            //GD.Print(LastFrame.MET + "  " + NewFrame.MET);
+            
             SY4_Host(ref NewFrame.PosCartesian, ref NewFrame.VelCartesian, NewFrame.MET);
-            SOI.Ephemeris.Add(NewFrame.MET, NewFrame);
-            LastFrame = NewFrame;
-            SOI.EphemerisMET_Last = LastFrame;
-            if (i == 1 ||i == 2 || i == 30)
+            SOI.Ephemeris.Add((NewFrame.MET), NewFrame);
+            LastFrame = NewFrame.Clone();
+            SOI.EphemerisMET_Last = LastFrame.Clone();
+
+            Godot.Vector3 NewGlobalSpace = NewFrame.PosCartesian * (float)ScaleConversion("ToUnityUnits");
+            
+            if (System.Math.Abs((NewGlobalSpace - LastVertexPosGlobalSpace).Length())< .03)
             {
-                //GD.Print(i + " " + LastFrame.MET);
-                //GD.Print(LastFrame.PosCartesian);
+                LastVertexPosGlobalSpace = NewGlobalSpace;
+                TrackStripMesh.SurfaceAddVertex(NewGlobalSpace);
+                
             }
-            // code here for 1-body dynamics
+
+           
 
         }
-       // GD.Print(SOI.Ephemeris.ElementAt(1).Value.PosCartesian); // wtf??
+
+     
+
+        
+        
+
+            
+        GD.Print("Projected");
+        //GD.Print(LS_P * (float)ScaleConversion("ToUnityUnits"));
+        // GD.Print("Done rendering");
+        //GD.Print(ProjectOry.Trajectory);
+        //GD.Print(ProjectOry.TrackStripMesh.SurfaceGetArrays();
+        TrackStripMesh.SurfaceEnd();
+        TrackRef.TopLevel = true; // disable if relative to another body besides the main soi
+        SOI.ObjectRef.AddChild(TrackRef);
+        TrackRef.Position = new Vector3();
+        TrackRef.CastShadow = 0;
+        // this.NBodyRef = Instantiate(NBodyRef, new Godot.Vector3(0, 0, 0), Godot.Quaternion.identity);
+        // GD.Print(SOI.Ephemeris.ElementAt(1).Value.PosCartesian); // wtf??
         //DiscreteTimestep Banzai = SOI.Ephemeris.ElementAt(1); // wtf??
         //GD.Print(SOI.Ephemeris.ElementAt); // wtf??
-       //GD.Print(SOI.Ephemeris[1].PosCartesian);
-       // GD.Print(SOI.Ephemeris[2].PosCartesian);
-       // GD.Print(SOI.Ephemeris[30].PosCartesian); // wot?
+        //GD.Print(SOI.Ephemeris[1].PosCartesian);
+        // GD.Print(SOI.Ephemeris[2].PosCartesian);
+        // GD.Print(SOI.Ephemeris[30].PosCartesian); // wot?
 
         //StartFrame.PosCartesian;
 
@@ -486,9 +547,18 @@ public partial class AstroProp_Runtime : Node3D
     public static DiscreteTimestep FindStateSOI(CelestialRender SOI, int MET) //we're using dictionary indexing here, hella faster than list lookup (its not iterative like lists)
     {
        //GD.Print(MET);
-        DiscreteTimestep FoundStep = SOI.Ephemeris.ElementAt(MET).Value;
+
+        DiscreteTimestep FoundStep = SOI.Ephemeris[MET].Clone(); 
+        
+        //ElementAt(index) has to loop through every value before it in order to look up an index??? WTF
+        //EZ fix, just index using dict[index]. Holy based
+        
+        //as the MET increases, so does the lag. with an index of 1, it is very performant??? after frame 30000, it may have to rehash the table?
+        // DiscreteTimestep FoundStep = SOI.Ephemeris.ElementAt((int)(MET/Reference.Dynamics.TimeStep)).Value.Clone();
+        //GD.Print(MET, (int)(MET / Reference.Dynamics.TimeStep));
         //GD.Print(MET + " " + FoundStep.MET + " Position: " + FoundStep.PosCartesian);
-       // GD.Print(FoundStep.MET);
+        //GD.Print(MET + " " + FoundStep.MET); //not good
+        // GD.Print(FoundStep.MET);
         return FoundStep;
 
         // y did I make this a func????
@@ -500,15 +570,15 @@ public partial class AstroProp_Runtime : Node3D
         {
             public static double StandardGravParam = (6.67 * Mathf.Pow(10, -11)); // Unmodifiable
 
-            public static double TimeStep = 1 / 1; // seconds in between
+            public static int TimeStep = 1 / 1; // seconds per timestep
             public static double MET = 0; //mean elapsed time
 
             public static double RandomAssConstant = 8.564471763787176;//9, 8.4 for some odd reason
-            public static double TimeCompression = (1); //100000; // default is 1, 2360448 is 1 lunar month per second
+            public static double TimeCompression = (3000); //100000; // default is 1, 2360448 is 1 lunar month per second
 
             public static double DegToRads = Math.PI / 180;
 
-            public static int EphemerisCeiling = 60 * 60 * 24 * 27;
+            public static int EphemerisCeiling = (60 * 60 * 24 * 27)/TimeStep;
         };
 
         public class SOI
@@ -669,7 +739,7 @@ public partial class AstroProp_Runtime : Node3D
 
         Godot.Vector3 GravityUnit = FromProjToSOI / FromProjToSOI.Length();
 
-        double GravityAccelerant = (Reference.SOI.MainReference.GravitationalParameter / DistanceExponent);
+        double GravityAccelerant = (SOI.GravitationalParameter / DistanceExponent);
 
         Acceleration = GravityUnit * (float)GravityAccelerant;
 
@@ -701,7 +771,7 @@ public partial class AstroProp_Runtime : Node3D
 
         double SMA = -(SOI_Mu*Distance)/(Distance*Relative_Vel-2*SOI_Mu);
         double Period = 2 * System.Math.PI * System.Math.Sqrt(Math.Pow(SMA, 3)/SOI_Mu);
-        GD.Print(Period);
+       // GD.Print(Period);
         return Period;
     }
    
@@ -729,32 +799,53 @@ public partial class AstroProp_Runtime : Node3D
         // GD.Print(PosCartesian);
         //.transform.position = PosCartesian;
     }
+    public void GrowTrack(NBodyAffected Object, int MET)
+    {
 
+    }
+    public void TrimTrack(NBodyAffected Object, int MET)
+    {
+
+    }
     void BeginStepOps()
     {
-        if (Reference.Dynamics.MET == (10000000))
-        {
-            GD.Print("Lunar orbit debug");
-            //Reference.Dynamics.TimeCompression = 1;
-        }
+        
 
-        Reference.Dynamics.MET += Reference.Dynamics.TimeStep;
+
         // Begin to do the Celestials 
-        foreach (var CelestialRender in KeplerContainers)
-        {
-            DiscreteTimestep NewFrame = CelestialRender.EphemerisMET_Last;
-            //GD.Print(CelestialRender.EphemerisMET_Last.MET);
-            NewFrame.MET += (int)Reference.Dynamics.TimeStep;
-            SY4_Host(ref NewFrame.PosCartesian, ref NewFrame.VelCartesian, NewFrame.MET);
-            CelestialRender.Ephemeris.Add(NewFrame.MET,NewFrame);
-            CelestialRender.EphemerisMET_Last = NewFrame;
+        //foreach (var CelestialRender in KeplerContainers)
+        bool debugKep = false; //lag not even caused by memory leaks
 
-            DiscreteTimestep LastState = FindStateSOI(CelestialRender, (int)Reference.Dynamics.MET);
+        for (int i = 0; i < KeplerContainers.Count; i++) // do NOT EVER use foreach, it is read only.
+        {
+            //CelestialRender Overwrite = KeplerContainers[i];
+            if (!debugKep)
+            {
+                DiscreteTimestep NewFrame = KeplerContainers[i].EphemerisMET_Last;
+                //GD.Print(CelestialRender.EphemerisMET_Last.MET);
+                NewFrame.MET += (int)Reference.Dynamics.TimeStep;
+                SY4_Host(ref NewFrame.PosCartesian, ref NewFrame.VelCartesian, NewFrame.MET);
+                KeplerContainers[i].Ephemeris[NewFrame.MET] = NewFrame; //LAG NOT EVEN CAUSED BY ADDING TO DICTIONARY?
+                //KeplerContainers[i].Ephemeris.Add((NewFrame.MET),NewFrame);
+                //GD.Print(NewFrame.MET, NewFrame.GetHashCode()); //MAKE A HASHCODE OVERRIDE
+                KeplerContainers[i].EphemerisMET_Last = NewFrame;
+            }
+           
+
+            DiscreteTimestep LastState = FindStateSOI(KeplerContainers[i], (int)Reference.Dynamics.MET); // somewhere in here, lag 
+           //GD.Print()
             //GD.Print(LastState.PosCartesian);
-            CelestialRender.ObjectRef.Position = LastState.PosCartesian*(float)ScaleConversion("ToUnityUnits");
+            KeplerContainers[i].ObjectRef.Position = LastState.PosCartesian*(float)ScaleConversion("ToUnityUnits");
+           
+            //KeplerContainers[i].Ephemeris.Remove(KeplerContainers[i].Ephemeris.ElementAt((int)Reference.Dynamics.MET).Key);
+            //KeplerContainers[i].EphemerisMET_Last = LastState;
             // code here for 1-body dynamics
             //CelestialRender.Ephemeris.LastIndexOf();
             //CelestialRender.Ephemeris
+
+            //GD.Print(Reference.Dynamics.MET + " DictCount: " + KeplerContainers[i].Ephemeris.Count() + " DictCapacity: " + KeplerContainers[i].Ephemeris.EnsureCapacity(KeplerContainers[i].Ephemeris.Count()));
+
+            //some kind of trim function too??
         }
 
 
@@ -772,14 +863,14 @@ public partial class AstroProp_Runtime : Node3D
     public override void _Ready()
     {
         //Reference.Dynamics.TimeCompression = 1;
-        GD.Print("Boostrapper Startup");
+       // GD.Print("Boostrapper Startup");
         // Line ends after this, wtf???
-        GD.Print(GetNode<Node3D>("Global/Moon").Position);
+       //GD.Print(GetNode<Node3D>("Global/Moon").Position);
         
         GetNode<Node3D>("Global/Moon").Position = (new Vector3(0, 0, 0));
-        GD.Print(GetNode<Node3D>("Global/Moon").Position);
+       // GD.Print(GetNode<Node3D>("Global/Moon").Position);
         //=(new Godot.Vector3(10, 0, 0));
-        GD.Print("Can Translate");                                           //(new Godot.Vector3(10, 0, 0));
+       // GD.Print("Can Translate");                                           //(new Godot.Vector3(10, 0, 0));
                                                                         // Reference.SOI.MainReference. = GetNode<Node>("Global/Earth");
                                                                         //Print("AstroPropV2");
                                                                         //MotionContainer.
@@ -804,7 +895,7 @@ public partial class AstroProp_Runtime : Node3D
             "Sagitta",
             "a spaceship",
             new Godot.Vector3(0, 0, 6789000), //6789000 iss altitude meters
-            new Godot.Vector3(-7600 - 3000, 00, 0), //-6576 iss velocity m/s
+            new Godot.Vector3(-7600 - 2800, -2000, 0)* (float)1.013, //-6576 iss velocity m/s
             new Godot.Vector3(0, 0, 0) // zero propulsion
 
 
@@ -831,8 +922,8 @@ public partial class AstroProp_Runtime : Node3D
         // Reference.SOI.PrintProperties()
 
     }
-    public static double LastStep = 0;
-    public static double NextStep = Time.GetUnixTimeFromSystem() + Reference.Dynamics.TimeStep / (Reference.Dynamics.TimeCompression);
+    public double LastStep = 0;
+    public double NextStep = Time.GetUnixTimeFromSystem() + Reference.Dynamics.TimeStep / (Reference.Dynamics.TimeCompression);
     
     public override void _Process(double Delta)
     {
@@ -850,9 +941,9 @@ public partial class AstroProp_Runtime : Node3D
             NextStep = (Time.GetUnixTimeFromSystem()) + Reference.Dynamics.TimeStep / (Reference.Dynamics.TimeCompression);
             for (int i = 0; i < OverfillFrame; i++)
             {
-                
+                Reference.Dynamics.MET += Reference.Dynamics.TimeStep;
                 BeginStepOps();
-            
+
             };
 
             RealTimeInterpolate = Reference.Dynamics.MET;

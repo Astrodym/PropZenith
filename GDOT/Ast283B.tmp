@@ -3,7 +3,7 @@
 [ext_resource type="SphereMesh" uid="uid://hvpsax33j75w" path="res://Prefabs/SOIbasic.tres" id="1_dh6yw"]
 [ext_resource type="Script" path="res://Scripts/AstroProp_Runtime.cs" id="1_o5ibn"]
 [ext_resource type="Shader" uid="uid://byhec0f2fqwc5" path="res://Shaders/MoonShader.tres" id="3_oohyp"]
-[ext_resource type="ArrayMesh" uid="uid://ce2je2focpw66" path="res://Prefabs/NewPlaneMesh.obj" id="3_yje6v"]
+[ext_resource type="ArrayMesh" uid="uid://hvpsax33j75w" path="res://Prefabs/SOIbasic.tres" id="3_yje6v"]
 [ext_resource type="Script" path="res://FreecamScript.gd" id="4_fh5v0"]
 [ext_resource type="Shader" path="res://Shaders/LineSegment.gdshader" id="4_svrnh"]
 
