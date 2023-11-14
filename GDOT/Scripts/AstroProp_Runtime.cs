@@ -27,7 +27,7 @@ using static AstroProp_Runtime;
 
 public partial class AstroProp_Runtime : Node3D
 {
-    public void SY4(ref Godot.Vector3 PosCartesian, ref Godot.Vector3 VelCartesian, Godot.Vector3 InstantaneousAccel, double MET)
+    public void SY4(ref Godot.Vector3 PosCartesian, ref Godot.Vector3 VelCartesian, Godot.Vector3 InstantaneousAccel, double MET, ref CelestialRender MainSatelliteProx)
     {
         double curt2 = 1.25992104989;
         double w0 = -(curt2 / (2 - curt2));
@@ -42,21 +42,44 @@ public partial class AstroProp_Runtime : Node3D
         double d3 = w1;
         double d2 = w0;
 
+       
+        //CelestialRender MainSatelliteProx = KeplerContainers[1];
+
+        float MainSOIAccel = 0;
+
         // PosCartesian = PosCartesian * (float)ScaleConversion("ToRealUnits"); do this when calling le function
 
-       // GD.Print(PosCartesian);
+        // GD.Print(PosCartesian);
         Godot.Vector3 x1 = PosCartesian + VelCartesian * (float)(c1 * Reference.Dynamics.TimeStep);
         Godot.Vector3 a1 = new Godot.Vector3();
         GravityMain_SOI(x1, MET, ref a1);
+
         foreach (var CelestialRender in KeplerContainers)
         {
             Godot.Vector3 TempAccel = new Godot.Vector3();
             GravityGradient(CelestialRender, x1, MET, ref TempAccel);
             //GD.Print(TempAccel);
             a1 += TempAccel;
+
+            if (TempAccel.Length() > MainSOIAccel)
+            {
+                MainSOIAccel = TempAccel.Length();
+                MainSatelliteProx = CelestialRender;//reassign the reference to a beefier SOI
+            }
             //Debug.Log(CelestialRender.Name.ToString());
         }
-       // GD.Print(a1);
+        // GD.Print(a1);
+        if (MainSOIAccel*2 < a1.Length())
+        {
+            //MainSOIProx = true;
+            //MainSatelliteProx
+            MainSatelliteProx = null;
+            //GD.Print(MainSOIAccel + " " + a1.Length());
+        }
+        else
+        {
+            //GD.Print(MainSatelliteProx.Name);
+        }
         a1 += InstantaneousAccel;
 
         Godot.Vector3 v1 = VelCartesian + (float)(d1) * a1 * (float)Reference.Dynamics.TimeStep;
@@ -273,10 +296,13 @@ public partial class AstroProp_Runtime : Node3D
             ParentRef
             );
         Godot.OrmMaterial3D LineMat = new Godot.OrmMaterial3D();
-        LineMat.ShadingMode = BaseMaterial3D.ShadingModeEnum.PerPixel; //LineMat.ShadingMode = BaseMaterial3D.ShadingModeEnum.Unshaded;
+        LineMat.ShadingMode = BaseMaterial3D.ShadingModeEnum.PerPixel; 
+        
+        //LineMat.ShadingMode = BaseMaterial3D.ShadingModeEnum.Unshaded;
         //LineMat.DistanceFadeMaxDistance = 100;
         //LineMat.DistanceFadeMinDistance = -80;
         //LineMat.DistanceFadeMode = BaseMaterial3D.DistanceFadeModeEnum.PixelAlpha;
+
         LineMat.EmissionEnabled = true;
         LineMat.DisableAmbientLight = true;
         LineMat.DisableReceiveShadows = true;
@@ -284,32 +310,28 @@ public partial class AstroProp_Runtime : Node3D
         LineMat.EmissionIntensity = 10;
         LineMat.Roughness = 1;
         LineMat.MetallicSpecular = 0;
-        
-        //LineMat.SpecularMode = BaseMaterial3D.SpecularModeEnum.Toon;
-        
         LineMat.AlbedoColor = Color.FromHtml("#FF14AF");
 
         ProjectOry.ParentRef = ParentRef;
         ProjectOry.Name = Name;
-        
-
         ProjectOry.ObjectRef = new Godot.MeshInstance3D(); // the track itself
         ProjectOry.TrackStripMesh = new Godot.ImmediateMesh();
         ProjectOry.TrackStripMesh.SurfaceBegin(Godot.Mesh.PrimitiveType.LineStrip, LineMat);
-
-        
         ProjectOry.ObjectRef.Mesh = ProjectOry.TrackStripMesh;
-        // this.StateVectors.InstantaneousAccel = InstantaneousAccel;
-        
-
         Godot.Vector3 LS_P = ProjectOry.StateVectors.PosCartesian;
         Godot.Vector3 LS_V = ProjectOry.StateVectors.VelCartesian;
         ProjectOry.TrackStripMesh.SurfaceAddVertex(LS_P * (float)ScaleConversion("ToUnityUnits"));
-        //GD.Print(ProjectOry.StartMET, ProjectOry.InterruptMET);
-        //GD.Print(LS_P);
+        
         
         ProjectOry.Trajectory = new Dictionary<int, SegmentStepFrame>(10000000);
         Godot.Vector3 LastVertexPosGlobalSpace = LS_P * (float)ScaleConversion("ToUnityUnits");
+
+        CelestialRender MainSOISatellite = null;
+        CelestialRender MainSOIUpdate = MainSOISatellite;
+
+        Godot.MeshInstance3D LocalLineMesh = null;
+        Godot.ImmediateMesh LocalImmediateMesh = null;
+
         for (int i = ProjectOry.StartMET; i < ProjectOry.InterruptMET; i++)
         {
             if (i == ProjectOry.InterruptMET-1)
@@ -318,19 +340,53 @@ public partial class AstroProp_Runtime : Node3D
                 GD.Print(LS_P);
             }
             
-            SY4(ref LS_P, ref LS_V, ProjectOry.StateVectors.InstantaneousAccel, i);
+            SY4(ref LS_P, ref LS_V, ProjectOry.StateVectors.InstantaneousAccel, i, ref MainSOISatellite);
             SegmentStepFrame Iter_Frame = new SegmentStepFrame(i, LS_P, LS_V, ProjectOry.StateVectors.InstantaneousAccel, false);
             Godot.Vector3 NewGlobalSpace = LS_P * (float)ScaleConversion("ToUnityUnits");
-            //GD.Print(LS_V);
-            //GD.Print(i);
-            ProjectOry.Trajectory.Add(((int)Iter_Frame.MET), Iter_Frame); // store instantaneous trajectory data here 
+            
+            ProjectOry.Trajectory.Add(((int)Iter_Frame.MET), Iter_Frame); 
 
+            if (!(MainSOISatellite == null) & (LocalLineMesh == null))
+            {
+                NLM_ReturnPacket NewPacket = NewLineMesh(Color.FromHtml("#66ff66"));
+                LocalLineMesh = NewPacket.LineObj;
+                LocalImmediateMesh = NewPacket.TrackStripMesh;
+                LocalImmediateMesh.SurfaceAddVertex((LS_P - FindStateSOI(MainSOISatellite,(int)Iter_Frame.MET).PosCartesian) * (float)ScaleConversion("ToUnityUnits"));
+                GD.Print("NewLine!! local to moon");
+            }
+            
+            if ((MainSOISatellite == null) & !(LocalLineMesh == null))
+            {
+                //ProjectOry.ObjectRef.AddChild(LocalLineMesh);
+                LocalImmediateMesh.SurfaceAddVertex((LS_P - FindStateSOI(MainSOIUpdate, (int)Iter_Frame.MET).PosCartesian) * (float)ScaleConversion("ToUnityUnits"));
+                LocalImmediateMesh.SurfaceEnd();
+                //LocalLineMesh.TopLevel = true;
+
+                //Godot.RemoteTransform3D RemoteRef = new Godot.RemoteTransform3D();
+                MainSOIUpdate.ObjectRef.AddChild(LocalLineMesh);
+
+                //RemoteRef.RemotePath = RemoteRef.GetPathTo(LocalLineMesh);
+                //RemoteRef.UseGlobalCoordinates = true;
+               // RemoteRef.UpdatePosition = true;
+                //MainSOIUpdate.ObjectRef
+
+                GD.Print("Ended " + MainSOIUpdate.Name);
+                //MainSOISatellite.ObjectRef.
+                //LocalLineMesh
+
+                LocalLineMesh = null; //set the null reference, freeing the temporary local track mesh, while also closing it and setting its parent
+                LocalImmediateMesh = null;
+            }
             if ((NewGlobalSpace -LastVertexPosGlobalSpace).Length() > .05)
             {
                 LastVertexPosGlobalSpace = NewGlobalSpace;
                 ProjectOry.TrackStripMesh.SurfaceAddVertex(NewGlobalSpace);
+                if (!(MainSOISatellite == null) & !(LocalLineMesh == null))
+                {
+                    LocalImmediateMesh.SurfaceAddVertex((LS_P - FindStateSOI(MainSOISatellite, (int)Iter_Frame.MET).PosCartesian) * (float)ScaleConversion("ToUnityUnits"));
+                }
             }
-           
+            MainSOIUpdate = MainSOISatellite;
             //ProjectOry.TrackStripMesh.SurfaceAddVertex(LS_P*(float)ScaleConversion("ToUnityUnits"));
             // GD.Print(LS_P * (float)ScaleConversion("ToUnityUnits"));
         };
@@ -367,7 +423,7 @@ public partial class AstroProp_Runtime : Node3D
             Vessel.StateVectors.VelCartesian,
             new Godot.Vector3(),
             (int)Reference.Dynamics.MET,
-            60*60*24*15
+            60*60*24*20
             //(int)(OrbitalPeriod * 1.5)
             );
         SetUpProjectOry(ref Vessel.Trajectory, Vessel.ObjectRef);
@@ -405,6 +461,20 @@ public partial class AstroProp_Runtime : Node3D
 
             // this.NBodyRef = Instantiate(NBodyRef, new Godot.Vector3(0, 0, 0), Godot.Quaternion.identity);
 
+        }
+    }
+    public class NLM_ReturnPacket
+    {
+        public Godot.MeshInstance3D LineObj; // the track itself
+        public Godot.ImmediateMesh TrackStripMesh;
+
+        public NLM_ReturnPacket(
+            Godot.MeshInstance3D LineObj,
+            Godot.ImmediateMesh TrackStripMesh
+        )
+        {
+            this.LineObj = LineObj;
+            this.TrackStripMesh = TrackStripMesh;
         }
     }
     public class CelestialRender
@@ -556,8 +626,8 @@ public partial class AstroProp_Runtime : Node3D
 
     public static DiscreteTimestep FindStateSOI(CelestialRender SOI, int MET) //we're using dictionary indexing here, hella faster than list lookup (its not iterative like lists)
     {
-       //GD.Print(MET);
-
+        //GD.Print(MET);
+       // GD.Print(SOI, SOI.Ephemeris[MET], MET);
         DiscreteTimestep FoundStep = SOI.Ephemeris[MET].Clone(); 
         
         //ElementAt(index) has to loop through every value before it in order to look up an index??? WTF
@@ -573,6 +643,7 @@ public partial class AstroProp_Runtime : Node3D
 
         // y did I make this a func????
     }
+
     public class Reference
     {
         
@@ -785,6 +856,35 @@ public partial class AstroProp_Runtime : Node3D
         return Period;
     }
    
+    public static NLM_ReturnPacket NewLineMesh(Godot.Color Color)
+    {
+        Godot.OrmMaterial3D LineMat = new Godot.OrmMaterial3D();
+        LineMat.ShadingMode = BaseMaterial3D.ShadingModeEnum.PerPixel;
+
+        //LineMat.ShadingMode = BaseMaterial3D.ShadingModeEnum.Unshaded;
+        //LineMat.DistanceFadeMaxDistance = 100;
+        //LineMat.DistanceFadeMinDistance = -80;
+        //LineMat.DistanceFadeMode = BaseMaterial3D.DistanceFadeModeEnum.PixelAlpha;
+
+        LineMat.EmissionEnabled = true;
+        LineMat.DisableAmbientLight = true;
+        LineMat.DisableReceiveShadows = true;
+        LineMat.Emission = Color;
+        LineMat.EmissionIntensity = 10;
+        LineMat.Roughness = 1;
+        LineMat.MetallicSpecular = 0;
+        LineMat.AlbedoColor = Color;
+
+
+        Godot.MeshInstance3D LineObj = new Godot.MeshInstance3D(); // the track itself
+        Godot.ImmediateMesh TrackStripMesh = new Godot.ImmediateMesh();
+        TrackStripMesh.SurfaceBegin(Godot.Mesh.PrimitiveType.LineStrip, LineMat);
+        LineObj.Mesh = TrackStripMesh;
+
+        
+
+        return new NLM_ReturnPacket(LineObj, TrackStripMesh);
+    }
 
     public void MoveNBy(NBodyAffected Object, double MET)
     {
@@ -794,7 +894,8 @@ public partial class AstroProp_Runtime : Node3D
         Godot.Vector3 VelCartesian = Object.StateVectors.VelCartesian;
         //double MET_Frame = MET;
         Object.StateVectors.PrevPosLerp = PosCartesian;
-        SY4(ref PosCartesian, ref VelCartesian, Object.StateVectors.InstantaneousAccel, MET);
+        CelestialRender PlaceholderRef = null;
+        SY4(ref PosCartesian, ref VelCartesian, Object.StateVectors.InstantaneousAccel, MET, ref PlaceholderRef);
 
        
         // LocalScale = (float)(LocalScale);
