@@ -488,6 +488,9 @@ public partial class AstroProp_Runtime : Node3D
         LineMat.Emission = Color.FromHtml("#00FFFF");
         LineMat.EmissionIntensity = 10;
         LineMat.AlbedoColor = Color.FromHtml("#00FFFF");
+        LineMat.DistanceFadeMaxDistance = 50;
+        LineMat.DistanceFadeMinDistance = -10;
+        LineMat.DistanceFadeMode = BaseMaterial3D.DistanceFadeModeEnum.PixelAlpha;
         SOI.TrackRef = new Godot.MeshInstance3D(); // the track itself
         MeshInstance3D TrackRef = SOI.TrackRef;
         ImmediateMesh TrackStripMesh = new Godot.ImmediateMesh();
