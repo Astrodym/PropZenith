@@ -7,7 +7,7 @@
 [ext_resource type="Shader" uid="uid://diy6hc1jsalyx" path="res://Shaders/PlaceholderShader.tres" id="4_svrnh"]
 [ext_resource type="Texture2D" uid="uid://dumnwlufvcnki" path="res://Shaders/Textures/SmoothNode.png" id="4_v7kxe"]
 
-[sub_resource type="ShaderMaterial" id="ShaderMaterial_c0u11"]
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_4uu6y"]
 render_priority = 0
 shader = ExtResource("4_svrnh")
 
@@ -56,11 +56,11 @@ metadata/TimeCompression = 1.0
 editor_description = "This is a test to discover if the nodepath even fucking works"
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 75.449, 0, -13.536)
 
-[node name="Moon" type="MeshInstance3D" parent="Global/Moon"]
-transform = Transform3D(2.73, 0, 0, 0, 2.73001, 0, 0, 0, 2.73, 0, 0, 0)
+[node name="Surface" type="MeshInstance3D" parent="Global/Moon"]
+transform = Transform3D(2.72998, 0.00801778, 0.00459049, -0.00800399, 2.72999, -0.00818813, -0.00461444, 0.00817469, 2.72998, 0, 0, 0)
 mesh = ExtResource("3_yje6v")
 skeleton = NodePath("../../..")
-surface_material_override/0 = SubResource("ShaderMaterial_c0u11")
+surface_material_override/0 = SubResource("ShaderMaterial_4uu6y")
 
 [node name="FadeLabel" type="Label3D" parent="Global/Moon"]
 transform = Transform3D(0.0999997, 0.000131919, -0.000186548, -0.000133213, 0.0999975, -0.00069486, 0.000185626, 0.000695107, 0.0999974, 0, 0, 0)
@@ -74,7 +74,7 @@ fixed_size = true
 modulate = Color(0, 1, 0.6, 1)
 text = "
 
-Luna
+Moon
 "
 font_size = 35
 outline_size = 0
@@ -117,7 +117,6 @@ surface_material_override/0 = SubResource("StandardMaterial3D_q8tf5")
 
 [node name="FadeLabel" type="Label3D" parent="Global/Sagitta"]
 transform = Transform3D(0.0999996, 0.000241866, -0.00015388, -0.000242885, 0.0999975, -0.000665057, 0.000152267, 0.000665428, 0.0999977, 0, 0, 0)
-visibility_range_begin = 10.0
 visibility_range_begin_margin = 40.0
 visibility_range_end_margin = 1.0
 offset = Vector2(0, -30)
@@ -180,6 +179,7 @@ surface_material_override/0 = SubResource("ShaderMaterial_w1lmu")
 
 [node name="TrackEvent" type="Node3D" parent="Global"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 29.2936, 0, 0)
+visible = false
 
 [node name="EventLabel" type="Label3D" parent="Global/TrackEvent"]
 transform = Transform3D(0.0999997, 0.000241866, -0.00015388, -0.000242885, 0.0999976, -0.000665057, 0.000152267, 0.000665428, 0.0999978, 0, 0, 0)

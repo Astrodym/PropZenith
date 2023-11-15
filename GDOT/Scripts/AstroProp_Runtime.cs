@@ -483,6 +483,8 @@ public partial class AstroProp_Runtime : Node3D
         public string Description;
 
         public Node3D ObjectRef;//   = GetNode<Node>("Global/Earth");
+        public MeshInstance3D Surface;
+
         public MeshInstance3D TrackRef;
 
         //public int FirstMET_Timestamp = 0; // since celestials are set up immediately on run -- redundant lmfao
@@ -505,13 +507,17 @@ public partial class AstroProp_Runtime : Node3D
         public double LongAscen = 0 * AstroProp_Runtime.Reference.Dynamics.DegToRads;
         public double MeanAnom = 0;
 
+        public bool TidalLocked = false;
+        public void ObjectSurfaceAssign(ref Node3D ObjectRef, ref  string ObjectRefString)
+        {
 
-
+        }
 
         public CelestialRender(
             string Name,
             string Description,
             Node3D ObjectRef,
+            MeshInstance3D SurfaceRef,
             double Mass,
             double GravitationalParameter,
             double SOI,
@@ -520,12 +526,15 @@ public partial class AstroProp_Runtime : Node3D
             double Eccentricity,
             double ArgPeri,
             double LongAscen,
-            double MeanAnom
+            double MeanAnom,
+            bool TidalLocked
             )
         {
+
             this.Name = Name;
             this.Description = Description;
             this.ObjectRef = ObjectRef;
+            this.Surface = SurfaceRef;
             this.Mass = Mass;
             this.GravitationalParameter = GravitationalParameter;
             this.SOI = SOI;
@@ -535,7 +544,7 @@ public partial class AstroProp_Runtime : Node3D
             this.ArgPeri = ArgPeri;
             this.LongAscen = LongAscen;
             this.MeanAnom = MeanAnom;
-
+            this.TidalLocked = TidalLocked;
             
         }
     }
@@ -655,7 +664,7 @@ public partial class AstroProp_Runtime : Node3D
             public static double MET = 0; //mean elapsed time
 
             public static double RandomAssConstant = 8.564471763787176;//9, 8.4 for some odd reason
-            public static double TimeCompression = (3000); //100000; // default is 1, 2360448 is 1 lunar month per second
+            public static double TimeCompression = (10000); //100000; // default is 1, 2360448 is 1 lunar month per second
 
             public static double DegToRads = Math.PI / 180;
 
@@ -940,6 +949,7 @@ public partial class AstroProp_Runtime : Node3D
                 //KeplerContainers[i].Ephemeris.Add((NewFrame.MET),NewFrame);
                 //GD.Print(NewFrame.MET, NewFrame.GetHashCode()); //MAKE A HASHCODE OVERRIDE
                 KeplerContainers[i].EphemerisMET_Last = NewFrame;
+
             }
            
 
@@ -947,7 +957,12 @@ public partial class AstroProp_Runtime : Node3D
            //GD.Print()
             //GD.Print(LastState.PosCartesian);
             KeplerContainers[i].ObjectRef.Position = LastState.PosCartesian*(float)ScaleConversion("ToUnityUnits");
-           
+            if (KeplerContainers[i].TidalLocked == true)
+            {
+                KeplerContainers[i].Surface.LookAt(-KeplerContainers[i].ObjectRef.Position, new Godot.Vector3(0, 1, 0));
+                
+                //GetNode<Node3D>("Global/Moon")
+            }
             //KeplerContainers[i].Ephemeris.Remove(KeplerContainers[i].Ephemeris.ElementAt((int)Reference.Dynamics.MET).Key);
             //KeplerContainers[i].EphemerisMET_Last = LastState;
             // code here for 1-body dynamics
@@ -990,6 +1005,7 @@ public partial class AstroProp_Runtime : Node3D
             "Moon",
             "Our closest rock",
             GetNode<Node3D>("Global/Moon"),
+            GetNode<MeshInstance3D>("Global/Moon/Surface"),
             7.35 * System.Math.Pow(10, 22),
             4.904 * System.Math.Pow(10, 12),
             64300,
@@ -998,15 +1014,16 @@ public partial class AstroProp_Runtime : Node3D
             .0549, //.0549
             0 * AstroProp_Runtime.Reference.Dynamics.DegToRads,
             0 * AstroProp_Runtime.Reference.Dynamics.DegToRads,
-            0
+            0,
+            true
 
         ));
         NByContainers.Add(new NBodyAffected(
             GetNode<Node3D>("Global/Sagitta"),
             "Sagitta",
             "a spaceship",
-            new Godot.Vector3(0, 0, 6789000), //6789000 iss altitude meters
-            new Godot.Vector3(0, 7600+3000, 0)* (float)1.01235, //-6576 iss velocity m/s
+            new Godot.Vector3(6789000, 0, 0), //6789000 iss altitude meters
+            new Godot.Vector3(0, 0, 7600 + 3000) * (float)1.012385, //-6576 iss velocity m/s
             new Godot.Vector3(0, 0, 0) // zero propulsion
 
 
