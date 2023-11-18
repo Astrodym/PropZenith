@@ -177,65 +177,12 @@ extra_cull_margin = 9.2
 mesh = ExtResource("3_yje6v")
 surface_material_override/0 = SubResource("ShaderMaterial_w1lmu")
 
-[node name="TrackEvent" type="Node3D" parent="Global"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 29.2936, 0, 0)
-visible = false
-
-[node name="EventLabel" type="Label3D" parent="Global/TrackEvent"]
-transform = Transform3D(0.0999997, 0.000241866, -0.00015388, -0.000242885, 0.0999976, -0.000665057, 0.000152267, 0.000665428, 0.0999978, 0, 0, 0)
-offset = Vector2(20, -60)
-billboard = 1
-no_depth_test = true
-fixed_size = true
-modulate = Color(0, 1, 0.203922, 1)
-text = "TEST EVENT"
-font_size = 35
-outline_size = 0
-horizontal_alignment = 0
-
-[node name="SpatialAid" type="Sprite3D" parent="Global/TrackEvent/EventLabel"]
-transform = Transform3D(0.0249999, -6.07214e-05, 3.80667e-05, 6.04668e-05, 0.0249994, 0.000166358, -3.84698e-05, -0.000166265, 0.0249994, 0, 0, 0)
-transparency = 0.6
-offset = Vector2(0, -100)
-modulate = Color(0, 1, 0.203922, 1)
-billboard = 1
-no_depth_test = true
-fixed_size = true
-texture = ExtResource("4_v7kxe")
-region_rect = Rect2(0, -0.27, 0, 0)
-
-[node name="Timestamp" type="Label3D" parent="Global/TrackEvent"]
-transform = Transform3D(0.0999996, 0.000241866, -0.00015388, -0.000242885, 0.0999975, -0.000665057, 0.000152267, 0.000665428, 0.0999977, 0, 0, 0)
-offset = Vector2(20, -100)
-billboard = 1
-no_depth_test = true
-fixed_size = true
-modulate = Color(0, 1, 0.203922, 1)
-text = "T-##:##:##
-"
-font_size = 35
-outline_size = 0
-horizontal_alignment = 0
-
-[node name="Details" type="Label3D" parent="Global/TrackEvent"]
-transform = Transform3D(0.0999996, 0.000241866, -0.00015388, -0.000242885, 0.0999975, -0.000665057, 0.000152267, 0.000665428, 0.0999977, 0, 0, 0)
-offset = Vector2(20, -120)
-billboard = 1
-no_depth_test = true
-fixed_size = true
-text = "RDIST [km]
-RVEL [m/s]
-"
-font_size = 35
-outline_size = 0
-horizontal_alignment = 0
-vertical_alignment = 0
-
 [node name="Local" type="Node3D" parent="."]
 
 [node name="Camera3D" type="Camera3D" parent="."]
 transform = Transform3D(0.296575, 0, 0.95501, 0, 1, 0, -0.95501, 0, 0.296575, 5.79629, 6.80714, -9.03228)
 current = true
+fov = 70.0
 script = ExtResource("4_fh5v0")
 
 [node name="WorldEnvironment" type="WorldEnvironment" parent="."]
@@ -290,3 +237,6 @@ text = "Earth
 label_settings = SubResource("LabelSettings_jx8lu")
 horizontal_alignment = 2
 vertical_alignment = 2
+
+[node name="Storage" type="Node3D" parent="."]
+visible = false

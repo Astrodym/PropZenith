@@ -2,7 +2,7 @@
 // 09 01 2023 C
 
 
-// Fuck you, Unity.
+// FYU
 
 // Hello, welcome to the math 
 // If you're coming from Unity, you will have a problem assigning references to nodes in the code
@@ -477,6 +477,17 @@ public partial class AstroProp_Runtime : Node3D
             this.TrackStripMesh = TrackStripMesh;
         }
     }
+
+    public class NSE_ReturnPacket
+    {
+       
+        public NSE_ReturnPacket(
+            
+        )
+        {
+           
+        }
+    }
     public class CelestialRender
     {
         public string Name;
@@ -690,6 +701,8 @@ public partial class AstroProp_Runtime : Node3D
 
             //public object Moon = new CelestialRender();
         };
+
+       
     };
     List<CelestialRender> KeplerContainers = new List<CelestialRender>(100); //List<CelestialRender> KeplerContainers = new List<CelestialRender>(1);
     List<NBodyAffected> NByContainers = new List<NBodyAffected>(30);
@@ -893,6 +906,36 @@ public partial class AstroProp_Runtime : Node3D
         
 
         return new NLM_ReturnPacket(LineObj, TrackStripMesh);
+    }
+    public static Godot.Node3D NewSpatialEvent(string EventName, int MET, string Description, Color Color)
+    {
+        //'Lite' NSE's are just going to hide everything but the spatial aid, so just make the description, time, and name invisible. Declutter.
+        // We will make an event manager later, which manages all of the count-down's and event visbilities each second.
+            //This will just be a list of all of the SE's, iterated through and managed
+
+
+
+        //var packed_scene = load("res://something.tscn")
+        //var scene_node = packed_scene.instance()
+        // var root = get_tree().get_root()
+        //root.add_child(scene_node)
+        Godot.PackedScene NSE = (PackedScene)ResourceLoader.Load("res://Prefabs/NewSpatialEvent");
+        Godot.Node3D SE = (Godot.Node3D)NSE.Instantiate();
+
+        Godot.Label3D EventLabel = (Godot.Label3D)SE.GetNode("EventLabel");
+        Godot.Label3D Timestamp = (Godot.Label3D)SE.GetNode("Timestamp");
+        Godot.Label3D Details = (Godot.Label3D)SE.GetNode("Details");
+        Godot.Sprite3D SpatialAid = (Godot.Sprite3D)SE.GetNode("SpatialAid");
+
+        EventLabel.Text = EventName;
+        Timestamp.Text = ""; // worry about this later, probably attach it to an event-manager.
+        Details.Text = Description;
+
+        EventLabel.Modulate = Color;
+        Timestamp.Modulate = Color;
+        SpatialAid.Modulate = Color;
+        return SE; //leave everything else (position, parent) to whatever called the method
+        //Godot.PackedScene NSE = AstroProp_Runtime.GetNode<PackedScene>("res://Prefabs/NewSpatialEvent");
     }
 
     public void MoveNBy(NBodyAffected Object, double MET)
