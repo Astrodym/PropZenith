@@ -332,6 +332,9 @@ public partial class AstroProp_Runtime : Node3D
         Godot.MeshInstance3D LocalLineMesh = null;
         Godot.ImmediateMesh LocalImmediateMesh = null;
 
+        Godot.Vector3 LastLocalDistance = new Godot.Vector3(0,0,0); //
+        float LastLocalDistance_Rate = 0; //VERY simple periapse/apoapse/closest approach method
+
         for (int i = ProjectOry.StartMET; i < ProjectOry.InterruptMET; i++)
         {
             if (i == ProjectOry.InterruptMET-1)
@@ -353,6 +356,7 @@ public partial class AstroProp_Runtime : Node3D
                 LocalImmediateMesh = NewPacket.TrackStripMesh;
                 LocalImmediateMesh.SurfaceAddVertex((LS_P - FindStateSOI(MainSOISatellite,(int)Iter_Frame.MET).PosCartesian) * (float)ScaleConversion("ToUnityUnits"));
                 GD.Print("NewLine!! local to moon");
+                LastLocalDistance = (LS_P - FindStateSOI(MainSOISatellite, (int)Iter_Frame.MET).PosCartesian);
             }
             
             if ((MainSOISatellite == null) & !(LocalLineMesh == null))
@@ -370,7 +374,7 @@ public partial class AstroProp_Runtime : Node3D
                // RemoteRef.UpdatePosition = true;
                 //MainSOIUpdate.ObjectRef
 
-                GD.Print("Ended " + MainSOIUpdate.Name);
+                //GD.Print("Ended " + MainSOIUpdate.Name);
                 //MainSOISatellite.ObjectRef.
                 //LocalLineMesh
 
@@ -386,6 +390,47 @@ public partial class AstroProp_Runtime : Node3D
                     LocalImmediateMesh.SurfaceAddVertex((LS_P - FindStateSOI(MainSOISatellite, (int)Iter_Frame.MET).PosCartesian) * (float)ScaleConversion("ToUnityUnits"));
                 }
             }
+            if (!(MainSOISatellite == null) & !(LocalLineMesh == null))
+            {
+                float LastRate = LastLocalDistance_Rate;
+                Godot.Vector3 NewLocalDistance = (LS_P - FindStateSOI(MainSOISatellite, (int)Iter_Frame.MET).PosCartesian);
+                LastLocalDistance_Rate = -(LastLocalDistance - NewLocalDistance).Length();
+                if (NewLocalDistance.Length() < LastLocalDistance.Length())
+                {
+                    LastLocalDistance_Rate = LastLocalDistance_Rate * (-1);
+                }
+                LastLocalDistance = NewLocalDistance;
+                if ((LastRate*LastLocalDistance_Rate) < 0 ) // look for a negative last rate (since the closing rates pass through zero, multiplying them will always yield a negative at an event)
+                {
+                    if (LastLocalDistance_Rate > 0)
+                    {
+                        Godot.Node3D Apo = NewSpatialEvent(
+                            "Apoapse",
+                            (int)Iter_Frame.MET,
+                            "RDIST "+ (Math.Round(LastLocalDistance.Length()/100)) /10 + " [km]" + //tolerance of one decimal ((int)dist/100)/10
+                            "\r\n" +
+                            "RVEL "+ Math.Abs((int)LastLocalDistance_Rate) + " [m/s]", 
+                            Color.FromHtml("#66ff66"));
+                        LocalLineMesh.AddChild(Apo);
+                        Apo.Position = (LS_P - FindStateSOI(MainSOISatellite, (int)Iter_Frame.MET).PosCartesian) * (float)ScaleConversion("ToUnityUnits");
+                        GD.Print("Apo " + ((int)LastLocalDistance.Length() / 100) / 10 + " [km]");
+                    }
+                    else
+                    {
+                        Godot.Node3D CA = NewSpatialEvent(
+                           "Periapse [CA]",
+                           (int)Iter_Frame.MET,
+                           "RDIST " + (Math.Round(LastLocalDistance.Length() / 100)) / 10 + " [km]" + //tolerance of one decimal ((int)dist/100)/10
+                           "\r\n" +
+                           "RVEL " + Math.Abs((int)LastLocalDistance_Rate) + " [m/s]",
+                           Color.FromHtml("#66ff66"));
+                        LocalLineMesh.AddChild(CA);
+                        CA.Position = (LS_P - FindStateSOI(MainSOISatellite, (int)Iter_Frame.MET).PosCartesian) * (float)ScaleConversion("ToUnityUnits");
+                        GD.Print("CA " + ((int)LastLocalDistance.Length() / 100) / 10 + " [km]");
+                    }
+                }
+            }
+                
             MainSOIUpdate = MainSOISatellite;
             //ProjectOry.TrackStripMesh.SurfaceAddVertex(LS_P*(float)ScaleConversion("ToUnityUnits"));
             // GD.Print(LS_P * (float)ScaleConversion("ToUnityUnits"));
@@ -919,7 +964,7 @@ public partial class AstroProp_Runtime : Node3D
         //var scene_node = packed_scene.instance()
         // var root = get_tree().get_root()
         //root.add_child(scene_node)
-        Godot.PackedScene NSE = (PackedScene)ResourceLoader.Load("res://Prefabs/NewSpatialEvent");
+        Godot.PackedScene NSE = (PackedScene)ResourceLoader.Load("res://Prefabs/TrackSpatialEvent.tscn"); //you forgot the filetype at the end kek (tscn)
         Godot.Node3D SE = (Godot.Node3D)NSE.Instantiate();
 
         Godot.Label3D EventLabel = (Godot.Label3D)SE.GetNode("EventLabel");

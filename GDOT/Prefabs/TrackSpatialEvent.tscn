@@ -1,6 +1,6 @@
 [gd_scene load_steps=2 format=3 uid="uid://b7u4vjb5ks2o0"]
 
-[ext_resource type="Texture2D" uid="uid://dumnwlufvcnki" path="res://Shaders/Textures/SmoothNode.png" id="1_oxpxe"]
+[ext_resource type="Texture2D" uid="uid://dumnwlufvcnki" path="res://Shaders/Textures/SmoothNode.png" id="1_6esx1"]
 
 [node name="TrackEventSpatial" type="Node3D"]
 
@@ -52,5 +52,5 @@ modulate = Color(0, 1, 0.203922, 1)
 billboard = 1
 no_depth_test = true
 fixed_size = true
-texture = ExtResource("1_oxpxe")
+texture = ExtResource("1_6esx1")
 region_rect = Rect2(0, -0.27, 0, 0)
