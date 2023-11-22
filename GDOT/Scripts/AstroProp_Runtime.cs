@@ -326,6 +326,9 @@ public partial class AstroProp_Runtime : Node3D
         ProjectOry.Trajectory = new Dictionary<int, SegmentStepFrame>(10000000);
         Godot.Vector3 LastVertexPosGlobalSpace = LS_P * (float)ScaleConversion("ToUnityUnits");
 
+
+
+
         CelestialRender MainSOISatellite = null;
         CelestialRender MainSOIUpdate = MainSOISatellite;
 
@@ -335,13 +338,24 @@ public partial class AstroProp_Runtime : Node3D
         Godot.Vector3 LastLocalDistance = new Godot.Vector3(0,0,0); //
         float LastLocalDistance_Rate = 0; //VERY simple periapse/apoapse/closest approach method
 
+        Godot.Vector3 LastGlobalDistance = new Godot.Vector3(0, 0, 0); //
+        float LastGlobalDistance_Rate = 0; //VERY simple periapse/apoapse/closest approach method
+        int LGD_SE = -1; // -1 is the unclaimed position, 0 is last event = apo, 1 is last event = peri. Redundancy.
+
+        Godot.Node3D LastApoGlobal = null;
+        float LastApoGlobal_Distance = 0;
+
+        Godot.Node3D LastPeriGlobal = null;
+        float LastPeriGlobal_Distance = 999999999999; //A very large number, so the initial state of the perigee can begin
+
+
         for (int i = ProjectOry.StartMET; i < ProjectOry.InterruptMET; i++)
         {
-            if (i == ProjectOry.InterruptMET-1)
-            {
-                GD.Print("We're here: " + i);
-                GD.Print(LS_P);
-            }
+            //if (i == ProjectOry.InterruptMET-1)
+            //{
+              //  GD.Print("We're here: " + i);
+                //GD.Print(LS_P);
+            //}
             
             SY4(ref LS_P, ref LS_V, ProjectOry.StateVectors.InstantaneousAccel, i, ref MainSOISatellite);
             SegmentStepFrame Iter_Frame = new SegmentStepFrame(i, LS_P, LS_V, ProjectOry.StateVectors.InstantaneousAccel, false);
@@ -392,7 +406,7 @@ public partial class AstroProp_Runtime : Node3D
             }
             if (!(MainSOISatellite == null) & !(LocalLineMesh == null))
             {
-                float LastRate = LastLocalDistance_Rate;
+                float LastRateGlobal = LastLocalDistance_Rate;
                 Godot.Vector3 NewLocalDistance = (LS_P - FindStateSOI(MainSOISatellite, (int)Iter_Frame.MET).PosCartesian);
                 LastLocalDistance_Rate = -(LastLocalDistance - NewLocalDistance).Length();
                 if (NewLocalDistance.Length() < LastLocalDistance.Length())
@@ -400,12 +414,12 @@ public partial class AstroProp_Runtime : Node3D
                     LastLocalDistance_Rate = LastLocalDistance_Rate * (-1);
                 }
                 LastLocalDistance = NewLocalDistance;
-                if ((LastRate*LastLocalDistance_Rate) < 0 ) // look for a negative last rate (since the closing rates pass through zero, multiplying them will always yield a negative at an event)
+                if ((LastRateGlobal * LastLocalDistance_Rate) < 0 ) // look for a negative last rate (since the closing rates pass through zero, multiplying them will always yield a negative at an event)
                 {
                     if (LastLocalDistance_Rate > 0)
                     {
                         Godot.Node3D Apo = NewSpatialEvent(
-                            "Apoapse",
+                            "FURTHEST [APO]",
                             (int)Iter_Frame.MET,
                             "RDIST "+ (Math.Round(LastLocalDistance.Length()/100)) /10 + " [km]" + //tolerance of one decimal ((int)dist/100)/10
                             "\r\n" +
@@ -413,12 +427,12 @@ public partial class AstroProp_Runtime : Node3D
                             Color.FromHtml("#66ff66"));
                         LocalLineMesh.AddChild(Apo);
                         Apo.Position = (LS_P - FindStateSOI(MainSOISatellite, (int)Iter_Frame.MET).PosCartesian) * (float)ScaleConversion("ToUnityUnits");
-                        GD.Print("Apo " + ((int)LastLocalDistance.Length() / 100) / 10 + " [km]");
+                        //GD.Print("Apo " + ((int)LastLocalDistance.Length() / 100) / 10 + " [km]");
                     }
                     else
                     {
                         Godot.Node3D CA = NewSpatialEvent(
-                           "Periapse [CA]",
+                           "CLOSEST [PERI]",
                            (int)Iter_Frame.MET,
                            "RDIST " + (Math.Round(LastLocalDistance.Length() / 100)) / 10 + " [km]" + //tolerance of one decimal ((int)dist/100)/10
                            "\r\n" +
@@ -426,11 +440,65 @@ public partial class AstroProp_Runtime : Node3D
                            Color.FromHtml("#66ff66"));
                         LocalLineMesh.AddChild(CA);
                         CA.Position = (LS_P - FindStateSOI(MainSOISatellite, (int)Iter_Frame.MET).PosCartesian) * (float)ScaleConversion("ToUnityUnits");
-                        GD.Print("CA " + ((int)LastLocalDistance.Length() / 100) / 10 + " [km]");
+                        //GD.Print("CA " + ((int)LastLocalDistance.Length() / 100) / 10 + " [km]");
                     }
                 }
             }
-                
+            float LastRate = LastGlobalDistance_Rate;
+            Godot.Vector3 NewGlobalDistance = (LS_P);
+            LastGlobalDistance_Rate = -(LastGlobalDistance - NewGlobalDistance).Length();
+            if (NewGlobalDistance.Length() < LastGlobalDistance.Length())
+            {
+                LastGlobalDistance_Rate = LastGlobalDistance_Rate * (-1);
+            }
+            LastGlobalDistance = NewGlobalDistance;
+            if ((LastRate * LastGlobalDistance_Rate) < 0) // look for a negative last rate (since the closing rates pass through zero, multiplying them will always yield a negative at an event)
+            {
+                if ((LastGlobalDistance_Rate > 0)  & (LastApoGlobal_Distance < LastGlobalDistance.Length())) //& !(LGD_SE == 0)
+                {
+                    LGD_SE = 0;
+                    Godot.Node3D Apo = NewSpatialEvent(
+                        "FURTHEST [APO]",
+                        (int)Iter_Frame.MET,
+                        "RDIST " + (Math.Round(LastGlobalDistance.Length() / 100)) / 10 + " [km]" + //tolerance of one decimal ((int)dist/100)/10
+                        "\r\n" +
+                        "RVEL " + Math.Abs((int)LastGlobalDistance_Rate) + " [m/s]",
+                        Color.FromHtml("#66ff66"));
+                    ProjectOry.ObjectRef.AddChild(Apo);
+                    Apo.Position = (LS_P) * (float)ScaleConversion("ToUnityUnits");
+                    if (LastApoGlobal != null)
+                    {
+                        LastApoGlobal.QueueFree(); // may need to sanity check here, just in case it cannot realize that null is not a node. food 4 thought. Yep, correct
+                    }
+                    LastApoGlobal = Apo;
+                    LastApoGlobal_Distance = LastGlobalDistance.Length();
+                    GD.Print("Apo " + ((int)LastGlobalDistance.Length() / 100) / 10 + " [km]");
+                    GD.Print(LS_V+" [m/s}");
+                }
+                if ((LastGlobalDistance_Rate < 0) & (LastPeriGlobal_Distance > LastGlobalDistance.Length())) // & !(LGD_SE == 1) you may remove this last statement once you have double precision, some weird stuff.
+                {
+                    LGD_SE = 1;
+                    Godot.Node3D CA = NewSpatialEvent(
+                       "CLOSEST [PERI]",
+                       (int)Iter_Frame.MET,
+                       "RDIST " + (Math.Round(LastGlobalDistance.Length() / 100)) / 10 + " [km]" + //tolerance of one decimal ((int)dist/100)/10
+                       "\r\n" +
+                       "RVEL " + Math.Abs((int)LastGlobalDistance_Rate) + " [m/s]",
+                       Color.FromHtml("#66ff66"));
+                    ProjectOry.ObjectRef.AddChild(CA);
+                    CA.Position = (LS_P * (float)ScaleConversion("ToUnityUnits"));
+                    if (LastPeriGlobal != null)
+                    {
+                        LastPeriGlobal.QueueFree(); // may need to sanity check here, just in case it cannot realize that null is not a node. food 4 thought. Yep, correct
+                    }
+                   
+                    LastPeriGlobal = CA;
+                    LastPeriGlobal_Distance = LastGlobalDistance.Length();
+                    GD.Print("CA " + ((int)LastGlobalDistance.Length() / 100) / 10 + " [km]");
+
+                }
+            }
+            //LastGlobalDistance = LS_P * (float)ScaleConversion("ToUnityUnits");
             MainSOIUpdate = MainSOISatellite;
             //ProjectOry.TrackStripMesh.SurfaceAddVertex(LS_P*(float)ScaleConversion("ToUnityUnits"));
             // GD.Print(LS_P * (float)ScaleConversion("ToUnityUnits"));
