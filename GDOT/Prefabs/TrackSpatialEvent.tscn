@@ -4,7 +4,19 @@
 
 [node name="TrackEventSpatial" type="Node3D"]
 
-[node name="EventLabel" type="Label3D" parent="."]
+[node name="SpatialAid" type="Sprite3D" parent="."]
+transform = Transform3D(0.0025, -3.19691e-11, -1.27329e-11, 1.91669e-11, 0.00250001, 1.30967e-10, 4.54747e-13, -7.82165e-11, 0.0025, 0, 0, 0)
+transparency = 0.6
+modulate = Color(0, 1, 0.203922, 1)
+billboard = 1
+no_depth_test = true
+fixed_size = true
+texture = ExtResource("1_6esx1")
+region_rect = Rect2(0, -0.27, 0, 0)
+
+[node name="ShowHide" type="Node3D" parent="."]
+
+[node name="EventLabel" type="Label3D" parent="ShowHide"]
 transform = Transform3D(0.0999997, 0.000241866, -0.00015388, -0.000242885, 0.0999976, -0.000665057, 0.000152267, 0.000665428, 0.0999978, 0, 0, 0)
 offset = Vector2(20, -60)
 billboard = 1
@@ -17,7 +29,7 @@ outline_size = 0
 horizontal_alignment = 0
 uppercase = true
 
-[node name="Timestamp" type="Label3D" parent="."]
+[node name="Timestamp" type="Label3D" parent="ShowHide"]
 transform = Transform3D(0.0999996, 0.000241866, -0.00015388, -0.000242885, 0.0999975, -0.000665057, 0.000152267, 0.000665428, 0.0999977, 0, 0, 0)
 offset = Vector2(20, -100)
 billboard = 1
@@ -30,7 +42,7 @@ font_size = 35
 outline_size = 0
 horizontal_alignment = 0
 
-[node name="Details" type="Label3D" parent="."]
+[node name="Details" type="Label3D" parent="ShowHide"]
 transform = Transform3D(0.0999996, 0.000241866, -0.00015388, -0.000242885, 0.0999975, -0.000665057, 0.000152267, 0.000665428, 0.0999977, 0, 0, 0)
 transparency = 0.8
 offset = Vector2(20, -120)
@@ -44,13 +56,3 @@ font_size = 35
 outline_size = 0
 horizontal_alignment = 0
 vertical_alignment = 0
-
-[node name="SpatialAid" type="Sprite3D" parent="."]
-transform = Transform3D(0.0025, -3.19691e-11, -1.27329e-11, 1.91669e-11, 0.00250001, 1.30967e-10, 4.54747e-13, -7.82165e-11, 0.0025, 0, 0, 0)
-transparency = 0.6
-modulate = Color(0, 1, 0.203922, 1)
-billboard = 1
-no_depth_test = true
-fixed_size = true
-texture = ExtResource("1_6esx1")
-region_rect = Rect2(0, -0.27, 0, 0)
