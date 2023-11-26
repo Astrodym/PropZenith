@@ -776,23 +776,13 @@ public partial class AstroProp_Runtime : Node3D
 
         // y did I make this a func????
     }
-     public void UpdateTemporal()
+     public void METtoString(ref string MET)
     {
-        Godot.Control Control = GetNode<Control>("Control");
-        Godot.MarginContainer Temporal = Control.GetNode<Godot.MarginContainer>("Temporal");
-        Godot.VBoxContainer VBX = Temporal.GetNode<Godot.VBoxContainer>("VBX");
-        Godot.Label Time = VBX.GetNode<Godot.Label>("Time");
-        Godot.Label TC = VBX.GetNode<Godot.Label>("TC");
-
-        //int Seconds = (int)(Reference.Dynamics.MET - System.Math.Floor(Reference.Dynamics.MET / 60) * 60);
-        //int Minutes = (int)(Reference.Dynamics.MET-Seconds - System.Math.Floor((Reference.Dynamics.MET-Seconds) / 60*60) * 60*60);
-        //int Hours = (int)(Reference.Dynamics.MET - Seconds - Minutes*60 - System.Math.Floor((Reference.Dynamics.MET - Seconds - Minutes*60) / (60 * 60 * 60)) * (60 * 60 * 60));
-        //int Days = a
-
-        int Days = (int)System.Math.Floor((Reference.Dynamics.MET) / (60 * 60 * 24));
-        int Hours = (int)System.Math.Floor((Reference.Dynamics.MET-Days* (60 * 60 * 24)) / (60 * 60));
-        int Minutes = (int)System.Math.Floor((Reference.Dynamics.MET - Days * (60 * 60 * 24) - Hours * (60*60)) / (60));
-        int Seconds = (int)System.Math.Floor((Reference.Dynamics.MET - Days * (60 * 60 * 24) - Hours * (60 * 60) - Minutes*60));
+        float MET_float = MET.ToFloat();
+        int Days = (int)System.Math.Floor((MET_float) / (60 * 60 * 24));
+        int Hours = (int)System.Math.Floor((MET_float - Days * (60 * 60 * 24)) / (60 * 60));
+        int Minutes = (int)System.Math.Floor((MET_float - Days * (60 * 60 * 24) - Hours * (60 * 60)) / (60));
+        int Seconds = (int)System.Math.Floor((MET_float - Days * (60 * 60 * 24) - Hours * (60 * 60) - Minutes * 60));
 
         string D0 = "";
         string H0 = "";
@@ -817,8 +807,24 @@ public partial class AstroProp_Runtime : Node3D
         }
 
 
-       // Time.Text = S0 + Seconds.ToString() + " S :" + M0 + Minutes.ToString() +  " M :" + H0 + Hours.ToString()+ " H :" + D0 + Days.ToString() + " D "; // code here for secs to mins and hours and days
-        Time.Text =  D0 + Days.ToString() + ":" + H0 + Hours.ToString() + ":" + M0 + Minutes.ToString() + ":" + S0 + Seconds.ToString() + " [DD:HH:MM:SS]"; // code here for secs to mins and hours and days
+        // Time.Text = S0 + Seconds.ToString() + " S :" + M0 + Minutes.ToString() +  " M :" + H0 + Hours.ToString()+ " H :" + D0 + Days.ToString() + " D "; // code here for secs to mins and hours and days
+        MET = D0 + Days.ToString() + ":" + H0 + Hours.ToString() + ":" + M0 + Minutes.ToString() + ":" + S0 + Seconds.ToString(); // + " [DD:HH:MM:SS]"; // code here for secs to mins and hours and days
+    }
+     public void UpdateTemporal()
+    {
+        Godot.Control Control = GetNode<Control>("Control");
+        Godot.MarginContainer Temporal = Control.GetNode<Godot.MarginContainer>("Temporal");
+        Godot.VBoxContainer VBX = Temporal.GetNode<Godot.VBoxContainer>("VBX");
+        Godot.Label Time = VBX.GetNode<Godot.Label>("Time");
+        Godot.Label TC = VBX.GetNode<Godot.Label>("TC");
+
+
+
+
+        // Time.Text = S0 + Seconds.ToString() + " S :" + M0 + Minutes.ToString() +  " M :" + H0 + Hours.ToString()+ " H :" + D0 + Days.ToString() + " D "; // code here for secs to mins and hours and days
+        string MTS_PlaceHolder = Reference.Dynamics.MET.ToString();
+        METtoString(ref MTS_PlaceHolder);
+        Time.Text =  MTS_PlaceHolder  + " [DD:HH:MM:SS]"; // code here for secs to mins and hours and days
 
         TC.Text = Reference.Dynamics.TimeCompression + "X " + "[Simulated/Real]";
         // 00:00:00:00
