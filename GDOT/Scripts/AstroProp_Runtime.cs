@@ -425,6 +425,13 @@ public partial class AstroProp_Runtime : Node3D
                             "\r\n" +
                             "RVEL "+ Math.Abs((int)LastLocalDistance_Rate) + " [m/s]", 
                             Color.FromHtml("#66ff66"));
+
+                        SpatialEventData SED = new SpatialEventData();
+                        SED.Address = Apo;
+                        SED.MET = (int)Iter_Frame.MET;
+
+                        SpatialEventManager.Add(SED);
+
                         LocalLineMesh.AddChild(Apo);
                         Apo.Position = (LS_P - FindStateSOI(MainSOISatellite, (int)Iter_Frame.MET).PosCartesian) * (float)ScaleConversion("ToUnityUnits");
                         //GD.Print("Apo " + ((int)LastLocalDistance.Length() / 100) / 10 + " [km]");
@@ -438,6 +445,13 @@ public partial class AstroProp_Runtime : Node3D
                            "\r\n" +
                            "RVEL " + Math.Abs((int)LastLocalDistance_Rate) + " [m/s]",
                            Color.FromHtml("#66ff66"));
+
+                        SpatialEventData SED = new SpatialEventData();
+                        SED.Address = CA;
+                        SED.MET = (int)Iter_Frame.MET;
+
+                        SpatialEventManager.Add(SED);
+
                         LocalLineMesh.AddChild(CA);
                         CA.Position = (LS_P - FindStateSOI(MainSOISatellite, (int)Iter_Frame.MET).PosCartesian) * (float)ScaleConversion("ToUnityUnits");
                         //GD.Print("CA " + ((int)LastLocalDistance.Length() / 100) / 10 + " [km]");
@@ -464,11 +478,18 @@ public partial class AstroProp_Runtime : Node3D
                         "\r\n" +
                         "RVEL " + Math.Abs((int)LastGlobalDistance_Rate) + " [m/s]",
                         Color.FromHtml("#66ff66"));
+
+                    SpatialEventData SED = new SpatialEventData();
+                    SED.Address = Apo;
+                    SED.MET = (int)Iter_Frame.MET;
+
+                    SpatialEventManager.Add(SED);
+
                     ProjectOry.ObjectRef.AddChild(Apo);
                     Apo.Position = (LS_P) * (float)ScaleConversion("ToUnityUnits");
                     if (LastApoGlobal != null)
                     {
-                        LastApoGlobal.QueueFree(); // may need to sanity check here, just in case it cannot realize that null is not a node. food 4 thought. Yep, correct
+                        ProjectOry.ObjectRef.RemoveChild(LastApoGlobal); // may need to sanity check here, just in case it cannot realize that null is not a node. food 4 thought. Yep, correct
                     }
                     LastApoGlobal = Apo;
                     LastApoGlobal_Distance = LastGlobalDistance.Length();
@@ -485,11 +506,18 @@ public partial class AstroProp_Runtime : Node3D
                        "\r\n" +
                        "RVEL " + Math.Abs((int)LastGlobalDistance_Rate) + " [m/s]",
                        Color.FromHtml("#66ff66"));
+
+                    SpatialEventData SED = new SpatialEventData();
+                    SED.Address = CA;
+                    SED.MET = (int)Iter_Frame.MET;
+
+                    SpatialEventManager.Add(SED);
+
                     ProjectOry.ObjectRef.AddChild(CA);
                     CA.Position = (LS_P * (float)ScaleConversion("ToUnityUnits"));
                     if (LastPeriGlobal != null)
                     {
-                        LastPeriGlobal.QueueFree(); // may need to sanity check here, just in case it cannot realize that null is not a node. food 4 thought. Yep, correct
+                        ProjectOry.ObjectRef.RemoveChild(LastPeriGlobal); ; // may need to sanity check here, just in case it cannot realize that null is not a node. food 4 thought. Yep, correct
                     }
                    
                     LastPeriGlobal = CA;
@@ -828,6 +856,7 @@ public partial class AstroProp_Runtime : Node3D
 
         TC.Text = Reference.Dynamics.TimeCompression + "X " + "[Simulated/Real]";
         // 00:00:00:00
+        SpatialEventUpdate();
     }
     public class Reference
     {
@@ -869,14 +898,53 @@ public partial class AstroProp_Runtime : Node3D
 
        
     };
+    public class SpatialEventData
+    {
+        public Godot.Node3D Address;
+        public float MET;
+    }
+
     List<CelestialRender> KeplerContainers = new List<CelestialRender>(100); //List<CelestialRender> KeplerContainers = new List<CelestialRender>(1);
     List<NBodyAffected> NByContainers = new List<NBodyAffected>(30);
+    public List<SpatialEventData> SpatialEventManager = new List<SpatialEventData>(30);
 
+    public void SpatialEventUpdate()
+    {
+        for (int i = 0; i < SpatialEventManager.Count; i++)
+        {
+            if ((SpatialEventManager[i] != null))//& IsInstanceIdValid(SpatialEventManager[i].Address.GetInstanceId()))// IsInsideTree
+               
+            {
+                //GD.Print((SpatialEventManager[i].Address.IsNodeReady()), SpatialEventManager[i].Address.IsInsideTree());
+                if (SpatialEventManager[i].Address.IsNodeReady() == false)//(SpatialEventManager[i].Address.IsQueuedForDeletion()) // garbage collections
+                {
+                    SpatialEventManager[i].Address.QueueFree();
+                    //GD.Print("Qeued One");
+                    SpatialEventManager[i] = null;
+                }
+                else
+                {
+                    SpatialEventData SED = SpatialEventManager[i];
+                    Godot.Node3D ShowHide = SED.Address.GetNode<Godot.Node3D>("ShowHide");
+                    Godot.Label3D TimeLabel = ShowHide.GetNode<Godot.Label3D>("Timestamp");
+                    float T_Till = (float)System.Math.Abs(SED.MET - Reference.Dynamics.MET);
+                    string Sign = "-";
+                    if ((SED.MET - Reference.Dynamics.MET) < 0)
+                    {
+                        Sign = "+";
+                    }
+                    string Elapsed = T_Till.ToString();
+                    METtoString(ref Elapsed);
+                    TimeLabel.Text = "T" + Sign + " " + Elapsed;
+                }
+               
+            }
+        }
+    }
 
+        //List<CelestialRender> KeplerContainers = new List<CelestialRender>();
 
-    //List<CelestialRender> KeplerContainers = new List<CelestialRender>();
-
-    public void ReturnEccentricAnomaly(double M, double e, ref double E)
+        public void ReturnEccentricAnomaly(double M, double e, ref double E)
     {
         //M = E - e*MathF.Sin(E);
 
@@ -1094,7 +1162,7 @@ public partial class AstroProp_Runtime : Node3D
         Godot.Sprite3D SpatialAid = (Godot.Sprite3D)SE.GetNode("SpatialAid");
 
         EventLabel.Text = EventName;
-        Timestamp.Text = ""; // worry about this later, probably attach it to an event-manager.
+        //Timestamp.Text = ""; // worry about this later, probably attach it to an event-manager. - DONE!
         Details.Text = Description;
 
         EventLabel.Modulate = Color;
@@ -1102,6 +1170,9 @@ public partial class AstroProp_Runtime : Node3D
         SpatialAid.Modulate = Color;
 
         ShowHide.Visible = true;
+
+        
+
         return SE; //leave everything else (position, parent) to whatever called the method
         //Godot.PackedScene NSE = AstroProp_Runtime.GetNode<PackedScene>("res://Prefabs/NewSpatialEvent");
     }
@@ -1321,5 +1392,7 @@ public partial class AstroProp_Runtime : Node3D
         // AstroProp_Runtime.Reference.Dynamics.StandardGravParam += 1;
         // Debug.Log(AstroProp_Runtime.Reference.Dynamics.StandardGravParam.ToString()); ;
     }
+
+    
 }
 
