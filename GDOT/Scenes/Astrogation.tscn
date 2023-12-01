@@ -51,7 +51,7 @@ metadata/TimeCompression = 1.0
 
 [node name="Moon" type="Node3D" parent="Global"]
 editor_description = "This is a test to discover if the nodepath even fucking works"
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 75.449, 0, -13.536)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 379.25, 0, -13.536)
 
 [node name="Surface" type="MeshInstance3D" parent="Global/Moon"]
 transform = Transform3D(2.72998, 0.00801778, 0.00459049, -0.00800399, 2.72999, -0.00818813, -0.00461444, 0.00817469, 2.72998, 0, 0, 0)
@@ -69,13 +69,14 @@ billboard = 1
 no_depth_test = true
 fixed_size = true
 modulate = Color(0, 1, 0.6, 1)
-text = "
+text = "Moon
 
-Moon
+
 "
 font_size = 35
 outline_size = 0
 horizontal_alignment = 0
+vertical_alignment = 2
 
 [node name="Earth" type="Node3D" parent="Global"]
 
@@ -86,7 +87,7 @@ skeleton = NodePath("../../..")
 surface_material_override/0 = SubResource("StandardMaterial3D_4inap")
 
 [node name="FadeLabel" type="Label3D" parent="Global/Earth"]
-transform = Transform3D(0.0999996, 0.000241866, -0.00015388, -0.000242885, 0.0999975, -0.000665057, 0.000152267, 0.000665428, 0.0999977, 0, 0, 0)
+transform = Transform3D(0.0999997, 0.000131919, -0.000186548, -0.000133213, 0.0999975, -0.00069486, 0.000185626, 0.000695107, 0.0999974, 0, 0, 0)
 visibility_range_begin = 25.0
 visibility_range_begin_margin = 7.0
 visibility_range_end_margin = 1.0
@@ -95,32 +96,14 @@ billboard = 1
 no_depth_test = true
 fixed_size = true
 modulate = Color(0, 1, 0.6, 1)
-text = "
+text = "Earth
 
 
-Earth
 "
 font_size = 35
 outline_size = 0
 horizontal_alignment = 0
-
-[node name="State" type="Label3D" parent="Global"]
-transform = Transform3D(0.0999996, 0.000241866, -0.00015388, -0.000242885, 0.0999975, -0.000665057, 0.000152267, 0.000665428, 0.0999977, 5.322, 0, 0)
-transparency = 0.8
-visibility_range_begin = 10.0
-visibility_range_begin_margin = 40.0
-visibility_range_end_margin = 1.0
-offset = Vector2(0, -30)
-billboard = 1
-no_depth_test = true
-fixed_size = true
-text = "
-
-
-BALLISTIC"
-font_size = 35
-outline_size = 0
-uppercase = true
+vertical_alignment = 2
 
 [node name="Sagitta" type="Node3D" parent="Global"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 5.322, 0, 0)
@@ -165,6 +148,24 @@ no_depth_test = true
 fixed_size = true
 texture = ExtResource("4_v7kxe")
 region_rect = Rect2(0, -0.27, 0, 0)
+
+[node name="State" type="Label3D" parent="Global/Sagitta/FadeLabel"]
+transform = Transform3D(1, 2.17369e-10, 0, -5.45697e-11, 1, -4.65661e-10, -1.16415e-10, -4.65661e-10, 1, 0, 0, 0)
+transparency = 0.8
+visibility_range_begin = 10.0
+visibility_range_begin_margin = 40.0
+visibility_range_end_margin = 1.0
+offset = Vector2(0, -30)
+billboard = 1
+no_depth_test = true
+fixed_size = true
+text = "
+
+
+BALLISTIC"
+font_size = 35
+outline_size = 0
+uppercase = true
 
 [node name="TrackBasic" type="Node3D" parent="Global"]
 

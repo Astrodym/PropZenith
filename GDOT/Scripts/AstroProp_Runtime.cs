@@ -474,9 +474,9 @@ public partial class AstroProp_Runtime : Node3D
                     Godot.Node3D Apo = NewSpatialEvent(
                         "FURTHEST [APO]",
                         (int)Iter_Frame.MET,
-                        "RDIST " + (Math.Round(LastGlobalDistance.Length() / 100)) / 10 + " [km]" + //tolerance of one decimal ((int)dist/100)/10
+                        "GDIST " + (Math.Round(LastGlobalDistance.Length() / 100)) / 10 + " [km]" + //tolerance of one decimal ((int)dist/100)/10
                         "\r\n" +
-                        "RVEL " + Math.Abs((int)LastGlobalDistance_Rate) + " [m/s]",
+                        "GVEL " + Math.Abs((int)LastGlobalDistance_Rate) + " [m/s]",
                         Color.FromHtml("#66ff66"));
 
                     SpatialEventData SED = new SpatialEventData();
@@ -502,9 +502,9 @@ public partial class AstroProp_Runtime : Node3D
                     Godot.Node3D CA = NewSpatialEvent(
                        "CLOSEST [PERI]",
                        (int)Iter_Frame.MET,
-                       "RDIST " + (Math.Round(LastGlobalDistance.Length() / 100)) / 10 + " [km]" + //tolerance of one decimal ((int)dist/100)/10
+                       "GDIST " + (Math.Round(LastGlobalDistance.Length() / 100)) / 10 + " [km]" + //tolerance of one decimal ((int)dist/100)/10
                        "\r\n" +
-                       "RVEL " + Math.Abs((int)LastGlobalDistance_Rate) + " [m/s]",
+                       "GVEL " + Math.Abs((int)LastGlobalDistance_Rate) + " [m/s]",
                        Color.FromHtml("#66ff66"));
 
                     SpatialEventData SED = new SpatialEventData();
@@ -925,14 +925,55 @@ public partial class AstroProp_Runtime : Node3D
                 else
                 {
                     SpatialEventData SED = SpatialEventManager[i];
+
+
                     Godot.Node3D ShowHide = SED.Address.GetNode<Godot.Node3D>("ShowHide");
+
+
                     Godot.Label3D TimeLabel = ShowHide.GetNode<Godot.Label3D>("Timestamp");
+                    Godot.Label3D EventLabel = ShowHide.GetNode<Godot.Label3D>("EventLabel");
+
+                    Godot.Label3D Details = ShowHide.GetNode<Godot.Label3D>("Details");
+
+
+
+                    bool Pinned = (bool)ShowHide.GetMeta("Pinned");
+                    float LocalTransparency = TimeLabel.Transparency;
+
+                    
+
                     float T_Till = (float)System.Math.Abs(SED.MET - Reference.Dynamics.MET);
                     string Sign = "-";
                     if ((SED.MET - Reference.Dynamics.MET) < 0)
                     {
                         Sign = "+";
+                        TimeLabel.Modulate = Details.Modulate;
+                        EventLabel.Modulate = Details.Modulate;
                     }
+
+                    if ((Pinned == false) & (Sign != "-"))
+                    {
+                        LocalTransparency += (((float)0.9 - LocalTransparency) * (float).05);
+                    }
+                    else
+                    {
+                        float METgap = SpatialEventManager[i].MET - (float)Reference.Dynamics.MET;
+                        if ((METgap < 60 * 60 * 24) & (METgap >0))
+                        {
+                            float MGCoeff = METgap / (60 * 60 * 24);
+                            //LocalTransparency += (((float)(MGCoeff*.2) - LocalTransparency) * (float).01);
+                            LocalTransparency = (float)(System.Math.Sin(Time.GetUnixTimeFromSystem()*10)*.5);
+                        }
+                        else
+                        {
+                            LocalTransparency += (((float)0.2 - LocalTransparency) * (float).01);
+                        }
+                        
+                    }
+                    TimeLabel.Transparency = LocalTransparency;
+                    EventLabel.Transparency = LocalTransparency;
+
+                    Details.Transparency = (float)(.8 + LocalTransparency * .2); 
                     string Elapsed = T_Till.ToString();
                     METtoString(ref Elapsed);
                     TimeLabel.Text = "T" + Sign + " " + Elapsed;

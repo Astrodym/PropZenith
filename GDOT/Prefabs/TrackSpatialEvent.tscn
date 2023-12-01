@@ -15,6 +15,7 @@ texture = ExtResource("1_6esx1")
 region_rect = Rect2(0, -0.27, 0, 0)
 
 [node name="ShowHide" type="Node3D" parent="."]
+metadata/Pinned = false
 
 [node name="EventLabel" type="Label3D" parent="ShowHide"]
 transform = Transform3D(0.0999997, 0.000241866, -0.00015388, -0.000242885, 0.0999976, -0.000665057, 0.000152267, 0.000665428, 0.0999978, 0, 0, 0)
