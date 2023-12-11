@@ -15,7 +15,11 @@ shader = ExtResource("4_svrnh")
 albedo_color = Color(0.411765, 0.627451, 0.984314, 1)
 
 [sub_resource type="StandardMaterial3D" id="StandardMaterial3D_q8tf5"]
-albedo_color = Color(1, 0.219608, 0.0784314, 1)
+albedo_color = Color(1, 0.780392, 0.733333, 1)
+emission_enabled = true
+emission = Color(1, 1, 1, 1)
+emission_energy_multiplier = 100.0
+emission_intensity = 1068.45
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_w1lmu"]
 render_priority = 0
@@ -24,7 +28,7 @@ shader = ExtResource("4_svrnh")
 [sub_resource type="Environment" id="Environment_tpq1j"]
 background_mode = 1
 ambient_light_source = 2
-ambient_light_color = Color(0.0352941, 0.0588235, 0.160784, 1)
+ambient_light_color = Color(0.0117647, 0.0235294, 0.0901961, 1)
 ambient_light_energy = 1.63
 ssil_radius = 6.51
 sdfgi_use_occlusion = true
@@ -105,6 +109,14 @@ outline_size = 0
 horizontal_alignment = 0
 vertical_alignment = 2
 
+[node name="OmniLight3D" type="OmniLight3D" parent="Global/Earth"]
+transform = Transform3D(0.99935, 0, 0, 0, 0.99935, 0, 0, 0, 0.99935, 0, 0, 0)
+light_intensity_lumens = 100000.0
+light_temperature = 6765.0
+light_color = Color(0.0941176, 0.435294, 1, 1)
+light_energy = 300.0
+omni_range = 501.358
+
 [node name="Sagitta" type="Node3D" parent="Global"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 5.322, 0, 0)
 
@@ -181,6 +193,7 @@ surface_material_override/0 = SubResource("ShaderMaterial_w1lmu")
 transform = Transform3D(0.296382, 0, 0.954389, 0, 0.99935, 0, -0.954389, 0, 0.296382, 5.79629, 6.80714, -9.03228)
 current = true
 fov = 70.0
+far = 13000.0
 script = ExtResource("4_fh5v0")
 
 [node name="WorldEnvironment" type="WorldEnvironment" parent="."]
@@ -188,7 +201,7 @@ environment = SubResource("Environment_tpq1j")
 camera_attributes = SubResource("CameraAttributesPractical_1wmyw")
 
 [node name="DirectionalLight3D" type="DirectionalLight3D" parent="."]
-transform = Transform3D(-0.996849, 0, 0.0793289, 0, 1, 0, -0.0793289, 0, -0.996849, 0, 0, 0)
+transform = Transform3D(-0.999198, 0, -0.0174411, 0, 0.99935, 0, 0.0174411, 0, -0.999198, 0, 0, 0)
 light_energy = 1.161
 shadow_enabled = true
 

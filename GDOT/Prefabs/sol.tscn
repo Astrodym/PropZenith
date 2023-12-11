@@ -1,0 +1,19 @@
+[gd_scene load_steps=2 format=3 uid="uid://bi8lhk884731d"]
+
+[ext_resource type="Texture2D" uid="uid://dumnwlufvcnki" path="res://Shaders/Textures/SmoothNode.png" id="1_damig"]
+
+[node name="Sol" type="Node3D"]
+editor_description = "a sun, or the sun?
+10x closer to minimize render distance
+"
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, -11772)
+
+[node name="SpatialAid" type="Sprite3D" parent="."]
+transform = Transform3D(0.0199999, -4.85771e-05, 3.04533e-05, 4.83734e-05, 0.0199995, 0.000133086, -3.07758e-05, -0.000133012, 0.0199995, 0, 0, 0)
+transparency = 0.6
+pixel_size = 0.0025
+billboard = 1
+no_depth_test = true
+fixed_size = true
+texture = ExtResource("1_damig")
+region_rect = Rect2(0, -0.27, 0, 0)

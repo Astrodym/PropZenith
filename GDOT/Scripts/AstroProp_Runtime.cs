@@ -15,11 +15,13 @@
 
 
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.ComponentModel.Design;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Security.Cryptography.X509Certificates;
+using System.Threading.Tasks;
 using System.Xml.Serialization;
 using Godot;
 using static AstroProp_Runtime;
@@ -27,6 +29,10 @@ using static AstroProp_Runtime;
 
 public partial class AstroProp_Runtime : Node3D
 {
+    // Let's get the signals over with
+    [Signal]
+    public delegate void FrameUpdateEventHandler();
+
     public void SY4(ref Godot.Vector3 PosCartesian, ref Godot.Vector3 VelCartesian, Godot.Vector3 InstantaneousAccel, double MET, ref CelestialRender MainSatelliteProx)
     {
         double curt2 = 1.25992104989;
@@ -426,6 +432,7 @@ public partial class AstroProp_Runtime : Node3D
                             "RVEL "+ Math.Abs((int)LastLocalDistance_Rate) + " [m/s]", 
                             Color.FromHtml("#66ff66"));
 
+                        
                         SpatialEventData SED = new SpatialEventData();
                         SED.Address = Apo;
                         SED.MET = (int)Iter_Frame.MET;
@@ -433,6 +440,7 @@ public partial class AstroProp_Runtime : Node3D
                         SpatialEventManager.Add(SED);
 
                         LocalLineMesh.AddChild(Apo);
+                        SpatialUpdateEnumerable(Apo, (int)Iter_Frame.MET);
                         Apo.Position = (LS_P - FindStateSOI(MainSOISatellite, (int)Iter_Frame.MET).PosCartesian) * (float)ScaleConversion("ToUnityUnits");
                         //GD.Print("Apo " + ((int)LastLocalDistance.Length() / 100) / 10 + " [km]");
                     }
@@ -445,7 +453,7 @@ public partial class AstroProp_Runtime : Node3D
                            "\r\n" +
                            "RVEL " + Math.Abs((int)LastLocalDistance_Rate) + " [m/s]",
                            Color.FromHtml("#66ff66"));
-
+                       
                         SpatialEventData SED = new SpatialEventData();
                         SED.Address = CA;
                         SED.MET = (int)Iter_Frame.MET;
@@ -453,6 +461,7 @@ public partial class AstroProp_Runtime : Node3D
                         SpatialEventManager.Add(SED);
 
                         LocalLineMesh.AddChild(CA);
+                        SpatialUpdateEnumerable(CA, (int)Iter_Frame.MET);
                         CA.Position = (LS_P - FindStateSOI(MainSOISatellite, (int)Iter_Frame.MET).PosCartesian) * (float)ScaleConversion("ToUnityUnits");
                         //GD.Print("CA " + ((int)LastLocalDistance.Length() / 100) / 10 + " [km]");
                     }
@@ -478,7 +487,7 @@ public partial class AstroProp_Runtime : Node3D
                         "\r\n" +
                         "GVEL " + Math.Abs((int)LastGlobalDistance_Rate) + " [m/s]",
                         Color.FromHtml("#66ff66"));
-
+                    
                     SpatialEventData SED = new SpatialEventData();
                     SED.Address = Apo;
                     SED.MET = (int)Iter_Frame.MET;
@@ -486,6 +495,7 @@ public partial class AstroProp_Runtime : Node3D
                     SpatialEventManager.Add(SED);
 
                     ProjectOry.ObjectRef.AddChild(Apo);
+                    SpatialUpdateEnumerable(Apo, (int)Iter_Frame.MET);
                     Apo.Position = (LS_P) * (float)ScaleConversion("ToUnityUnits");
                     if (LastApoGlobal != null)
                     {
@@ -506,7 +516,7 @@ public partial class AstroProp_Runtime : Node3D
                        "\r\n" +
                        "GVEL " + Math.Abs((int)LastGlobalDistance_Rate) + " [m/s]",
                        Color.FromHtml("#66ff66"));
-
+                    
                     SpatialEventData SED = new SpatialEventData();
                     SED.Address = CA;
                     SED.MET = (int)Iter_Frame.MET;
@@ -514,6 +524,7 @@ public partial class AstroProp_Runtime : Node3D
                     SpatialEventManager.Add(SED);
 
                     ProjectOry.ObjectRef.AddChild(CA);
+                    SpatialUpdateEnumerable(CA, (int)Iter_Frame.MET);
                     CA.Position = (LS_P * (float)ScaleConversion("ToUnityUnits"));
                     if (LastPeriGlobal != null)
                     {
@@ -856,6 +867,8 @@ public partial class AstroProp_Runtime : Node3D
 
         TC.Text = Reference.Dynamics.TimeCompression + "X " + "[Simulated/Real]";
         // 00:00:00:00
+
+        EmitSignal(SignalName.FrameUpdate);
         SpatialEventUpdate();
     }
     public class Reference
@@ -908,77 +921,83 @@ public partial class AstroProp_Runtime : Node3D
     List<NBodyAffected> NByContainers = new List<NBodyAffected>(30);
     public List<SpatialEventData> SpatialEventManager = new List<SpatialEventData>(30);
 
+    bool SEU = true; //debug
     public void SpatialEventUpdate()
     {
-        for (int i = 0; i < SpatialEventManager.Count; i++)
+        if (SEU)
         {
-            if ((SpatialEventManager[i] != null))//& IsInstanceIdValid(SpatialEventManager[i].Address.GetInstanceId()))// IsInsideTree
-               
+
+
+            for (int i = 0; i < SpatialEventManager.Count; i++)
             {
-                //GD.Print((SpatialEventManager[i].Address.IsNodeReady()), SpatialEventManager[i].Address.IsInsideTree());
-                if (SpatialEventManager[i].Address.IsNodeReady() == false)//(SpatialEventManager[i].Address.IsQueuedForDeletion()) // garbage collections
+                if ((SpatialEventManager[i] != null))//& IsInstanceIdValid(SpatialEventManager[i].Address.GetInstanceId()))// IsInsideTree
+
                 {
-                    SpatialEventManager[i].Address.QueueFree();
-                    //GD.Print("Qeued One");
-                    SpatialEventManager[i] = null;
-                }
-                else
-                {
-                    SpatialEventData SED = SpatialEventManager[i];
-
-
-                    Godot.Node3D ShowHide = SED.Address.GetNode<Godot.Node3D>("ShowHide");
-
-
-                    Godot.Label3D TimeLabel = ShowHide.GetNode<Godot.Label3D>("Timestamp");
-                    Godot.Label3D EventLabel = ShowHide.GetNode<Godot.Label3D>("EventLabel");
-
-                    Godot.Label3D Details = ShowHide.GetNode<Godot.Label3D>("Details");
-
-
-
-                    bool Pinned = (bool)ShowHide.GetMeta("Pinned");
-                    float LocalTransparency = TimeLabel.Transparency;
-
-                    
-
-                    float T_Till = (float)System.Math.Abs(SED.MET - Reference.Dynamics.MET);
-                    string Sign = "-";
-                    if ((SED.MET - Reference.Dynamics.MET) < 0)
+                    //GD.Print((SpatialEventManager[i].Address.IsNodeReady()), SpatialEventManager[i].Address.IsInsideTree());
+                    if (SpatialEventManager[i].Address.IsNodeReady() == false)//(SpatialEventManager[i].Address.IsQueuedForDeletion()) // garbage collections
                     {
-                        Sign = "+";
-                        TimeLabel.Modulate = Details.Modulate;
-                        EventLabel.Modulate = Details.Modulate;
-                    }
-
-                    if ((Pinned == false) & (Sign != "-"))
-                    {
-                        LocalTransparency += (((float)0.9 - LocalTransparency) * (float).05);
+                        SpatialEventManager[i].Address.QueueFree();
+                        //GD.Print("Qeued One");
+                        SpatialEventManager[i] = null;
                     }
                     else
                     {
-                        float METgap = SpatialEventManager[i].MET - (float)Reference.Dynamics.MET;
-                        if ((METgap < 60 * 60 * 24) & (METgap >0))
+                        SpatialEventData SED = SpatialEventManager[i];
+
+
+                        Godot.Node3D ShowHide = SED.Address.GetNode<Godot.Node3D>("ShowHide");
+
+
+                        Godot.Label3D TimeLabel = ShowHide.GetNode<Godot.Label3D>("Timestamp");
+                        Godot.Label3D EventLabel = ShowHide.GetNode<Godot.Label3D>("EventLabel");
+
+                        Godot.Label3D Details = ShowHide.GetNode<Godot.Label3D>("Details");
+
+
+
+                        bool Pinned = (bool)ShowHide.GetMeta("Pinned");
+                        float LocalTransparency = TimeLabel.Transparency;
+
+
+
+                        float T_Till = (float)System.Math.Abs(SED.MET - Reference.Dynamics.MET);
+                        string Sign = "-";
+                        if ((SED.MET - Reference.Dynamics.MET) < 0)
                         {
-                            float MGCoeff = METgap / (60 * 60 * 24);
-                            //LocalTransparency += (((float)(MGCoeff*.2) - LocalTransparency) * (float).01);
-                            LocalTransparency = (float)(System.Math.Sin(Time.GetUnixTimeFromSystem()*10)*.5);
+                            Sign = "+";
+                            TimeLabel.Modulate = Details.Modulate;
+                            EventLabel.Modulate = Details.Modulate;
+                        }
+
+                        if ((Pinned == false) & (Sign != "-"))
+                        {
+                            LocalTransparency += (((float)0.9 - LocalTransparency) * (float).05);
                         }
                         else
                         {
-                            LocalTransparency += (((float)0.2 - LocalTransparency) * (float).01);
-                        }
-                        
-                    }
-                    TimeLabel.Transparency = LocalTransparency;
-                    EventLabel.Transparency = LocalTransparency;
+                            float METgap = SpatialEventManager[i].MET - (float)Reference.Dynamics.MET;
+                            if ((METgap < 60 * 60 * 24) & (METgap > 0))
+                            {
+                                float MGCoeff = METgap / (60 * 60 * 24);
+                                //LocalTransparency += (((float)(MGCoeff*.2) - LocalTransparency) * (float).01);
+                                LocalTransparency = (float)(System.Math.Sin(Time.GetUnixTimeFromSystem() * 10) * .5);
+                            }
+                            else
+                            {
+                                LocalTransparency += (((float)0.2 - LocalTransparency) * (float).01);
+                            }
 
-                    Details.Transparency = (float)(.8 + LocalTransparency * .2); 
-                    string Elapsed = T_Till.ToString();
-                    METtoString(ref Elapsed);
-                    TimeLabel.Text = "T" + Sign + " " + Elapsed;
+                        }
+                        TimeLabel.Transparency = LocalTransparency;
+                        EventLabel.Transparency = LocalTransparency;
+
+                        Details.Transparency = (float)(.8 + LocalTransparency * .2);
+                        string Elapsed = T_Till.ToString();
+                        METtoString(ref Elapsed);
+                        TimeLabel.Text = "T" + Sign + " " + Elapsed;
+                    }
+
                 }
-               
             }
         }
     }
@@ -1181,11 +1200,93 @@ public partial class AstroProp_Runtime : Node3D
 
         return new NLM_ReturnPacket(LineObj, TrackStripMesh);
     }
+    public async void SpatialUpdateEnumerable(Godot.Node3D NodeRef, int MET)
+    {
+        /*
+        if (true)
+        {
+            return; // safety is on rn
+        }
+        while (!NodeRef.IsNodeReady())
+        {
+            Task.Delay(500);
+        }
+            int LastMET = (int)Reference.Dynamics.MET;
+        while (NodeRef.IsNodeReady())
+        {
+            Task.Delay(500);
+            if (LastMET != (int)Reference.Dynamics.MET)
+            {
+                // SpatialEventData SED = SpatialEventManager[i];
+
+                Godot.Node3D Address = NodeRef;
+
+                Godot.Node3D ShowHide = Address.GetNode<Godot.Node3D>("ShowHide");
+
+
+                Godot.Label3D TimeLabel = ShowHide.GetNode<Godot.Label3D>("Timestamp");
+                Godot.Label3D EventLabel = ShowHide.GetNode<Godot.Label3D>("EventLabel");
+
+                Godot.Label3D Details = ShowHide.GetNode<Godot.Label3D>("Details");
+
+
+
+                bool Pinned = (bool)ShowHide.GetMeta("Pinned");
+                float LocalTransparency = TimeLabel.Transparency;
+
+
+
+                float T_Till = (float)System.Math.Abs(MET - Reference.Dynamics.MET);
+                string Sign = "-";
+                if ((MET - Reference.Dynamics.MET) < 0)
+                {
+                    Sign = "+";
+                    TimeLabel.Modulate = Details.Modulate;
+                    EventLabel.Modulate = Details.Modulate;
+                }
+
+                if ((Pinned == false) & (Sign != "-"))
+                {
+                    LocalTransparency += (((float)0.9 - LocalTransparency) * (float).05);
+                }
+                else
+                {
+                    float METgap = MET - (float)Reference.Dynamics.MET;
+                    if ((METgap < 60 * 60 * 24) & (METgap > 0))
+                    {
+                        float MGCoeff = METgap / (60 * 60 * 24);
+                        //LocalTransparency += (((float)(MGCoeff*.2) - LocalTransparency) * (float).01);
+                        LocalTransparency = (float)(System.Math.Sin(Time.GetUnixTimeFromSystem() * 10) * .5);
+                    }
+                    else
+                    {
+                        LocalTransparency += (((float)0.2 - LocalTransparency) * (float).01);
+                    }
+
+                }
+                TimeLabel.Transparency = LocalTransparency;
+                EventLabel.Transparency = LocalTransparency;
+
+                Details.Transparency = (float)(.8 + LocalTransparency * .2);
+                string Elapsed = T_Till.ToString();
+                METtoString(ref Elapsed);
+                TimeLabel.Text = "T" + Sign + " " + Elapsed;
+                //await (LastMET != (int)Reference.Dynamics.MET))
+            }
+        }
+
+            NodeRef.QueueFree();
+            //GD.Print("Qeued One");
+        
+           */
+        
+    }
+
     public static Godot.Node3D NewSpatialEvent(string EventName, int MET, string Description, Color Color)
     {
         //'Lite' NSE's are just going to hide everything but the spatial aid, so just make the description, time, and name invisible. Declutter.
         // We will make an event manager later, which manages all of the count-down's and event visbilities each second.
-            //This will just be a list of all of the SE's, iterated through and managed
+        //This will just be a list of all of the SE's, iterated through and managed
 
 
 
@@ -1193,6 +1294,8 @@ public partial class AstroProp_Runtime : Node3D
         //var scene_node = packed_scene.instance()
         // var root = get_tree().get_root()
         //root.add_child(scene_node)
+        bool StillActive = true;
+
         Godot.PackedScene NSE = (PackedScene)ResourceLoader.Load("res://Prefabs/TrackSpatialEvent.tscn"); //you forgot the filetype at the end kek (tscn)
         Godot.Node3D SE = (Godot.Node3D)NSE.Instantiate();
 
@@ -1212,7 +1315,7 @@ public partial class AstroProp_Runtime : Node3D
 
         ShowHide.Visible = true;
 
-        
+       
 
         return SE; //leave everything else (position, parent) to whatever called the method
         //Godot.PackedScene NSE = AstroProp_Runtime.GetNode<PackedScene>("res://Prefabs/NewSpatialEvent");
@@ -1312,10 +1415,10 @@ public partial class AstroProp_Runtime : Node3D
     public override void _Ready()
     {
         //Reference.Dynamics.TimeCompression = 1;
-       // GD.Print("Boostrapper Startup");
+        // GD.Print("Boostrapper Startup");
         // Line ends after this, wtf???
-       //GD.Print(GetNode<Node3D>("Global/Moon").Position);
-        
+        //GD.Print(GetNode<Node3D>("Global/Moon").Position);
+        //Task.Delay(10000);
         GetNode<Node3D>("Global/Moon").Position = (new Vector3(0, 0, 0));
        // GD.Print(GetNode<Node3D>("Global/Moon").Position);
         //=(new Godot.Vector3(10, 0, 0));
