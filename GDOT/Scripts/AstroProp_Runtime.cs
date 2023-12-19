@@ -387,11 +387,19 @@ public partial class AstroProp_Runtime : Node3D
                 //LocalLineMesh.TopLevel = true;
 
                 //Godot.RemoteTransform3D RemoteRef = new Godot.RemoteTransform3D();
-                MainSOIUpdate.ObjectRef.AddChild(LocalLineMesh);
+                //MainSOIUpdate.ObjectRef.AddChild(LocalLineMesh); //this is the line that parents the local line mesh to an SOI. This is bad, and will memory leak the fuck out of the place.
+
+                ProjectOry.ObjectRef.AddChild(LocalLineMesh);
+
+                TiedNodeData TNED = new TiedNodeData();
+                TNED.Victim = LocalLineMesh;
+                TNED.Follow = MainSOIUpdate.ObjectRef;
+
+                TiedNodeEventManger.Add(TNED);
 
                 //RemoteRef.RemotePath = RemoteRef.GetPathTo(LocalLineMesh);
                 //RemoteRef.UseGlobalCoordinates = true;
-               // RemoteRef.UpdatePosition = true;
+                // RemoteRef.UpdatePosition = true;
                 //MainSOIUpdate.ObjectRef
 
                 //GD.Print("Ended " + MainSOIUpdate.Name);
@@ -917,9 +925,17 @@ public partial class AstroProp_Runtime : Node3D
         public float MET;
     }
 
+    public class TiedNodeData
+    {
+        public Godot.Node3D Victim;
+        public Godot.Node3D Follow;
+
+    }
+
     List<CelestialRender> KeplerContainers = new List<CelestialRender>(100); //List<CelestialRender> KeplerContainers = new List<CelestialRender>(1);
     List<NBodyAffected> NByContainers = new List<NBodyAffected>(30);
     public List<SpatialEventData> SpatialEventManager = new List<SpatialEventData>(30);
+    public List<TiedNodeData> TiedNodeEventManger = new List<TiedNodeData>(30);
 
     bool SEU = true; //debug
     public void SpatialEventUpdate()
@@ -1001,7 +1017,32 @@ public partial class AstroProp_Runtime : Node3D
             }
         }
     }
+    public void UpdateTiedNodes()
+    {
+        for (int i = 0; i < TiedNodeEventManger.Count; i++)
+        {
+            if ((TiedNodeEventManger[i] != null))//& IsInstanceIdValid(SpatialEventManager[i].Address.GetInstanceId()))// IsInsideTree
 
+            {
+                //GD.Print((SpatialEventManager[i].Address.IsNodeReady()), SpatialEventManager[i].Address.IsInsideTree());
+                if (TiedNodeEventManger[i].Victim.IsNodeReady() == false)//(SpatialEventManager[i].Address.IsQueuedForDeletion()) // garbage collections
+                {
+                    //SpatialEventManager[i].Address.QueueFree(); cannot free queue as it has spatial events hosted under the node
+                    //GD.Print("Qeued One");
+                    TiedNodeEventManger[i] = null;
+                }
+                else
+                {
+                    TiedNodeData TNED = TiedNodeEventManger[i];
+
+                    TNED.Victim.GlobalPosition = TNED.Follow.GlobalPosition;
+
+                    
+                }
+
+            }
+        }
+    }
         //List<CelestialRender> KeplerContainers = new List<CelestialRender>();
 
         public void ReturnEccentricAnomaly(double M, double e, ref double E)
@@ -1531,6 +1572,7 @@ public partial class AstroProp_Runtime : Node3D
             //Debug.Log(CelestialRender.Name.ToString());
         }
         UpdateTemporal();
+        UpdateTiedNodes();
         // Debug.Log((RealTimeInterpolate));
 
         // AstroProp_Runtime.Reference.Dynamics.StandardGravParam += 1;

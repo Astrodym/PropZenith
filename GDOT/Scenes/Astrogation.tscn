@@ -193,7 +193,7 @@ surface_material_override/0 = SubResource("ShaderMaterial_w1lmu")
 transform = Transform3D(0.296382, 0, 0.954389, 0, 0.99935, 0, -0.954389, 0, 0.296382, 5.79629, 6.80714, -9.03228)
 current = true
 fov = 70.0
-far = 13000.0
+far = 2000.0
 script = ExtResource("4_fh5v0")
 
 [node name="WorldEnvironment" type="WorldEnvironment" parent="."]
