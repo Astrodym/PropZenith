@@ -2,10 +2,10 @@
 
 [ext_resource type="Script" path="res://Scripts/AstroProp_Runtime.cs" id="1_o5ibn"]
 [ext_resource type="SphereMesh" uid="uid://hvpsax33j75w" path="res://Prefabs/SOIbasic.tres" id="3_yje6v"]
-[ext_resource type="Script" path="res://FreecamScript.gd" id="4_fh5v0"]
 [ext_resource type="Texture2D" uid="uid://ofbu73eb80if" path="res://Shaders/Textures/AS_UNMANNED.png" id="4_fkog5"]
 [ext_resource type="Shader" uid="uid://diy6hc1jsalyx" path="res://Shaders/PlaceholderShader.tres" id="4_svrnh"]
 [ext_resource type="Texture2D" uid="uid://dumnwlufvcnki" path="res://Shaders/Textures/SmoothNode.png" id="4_v7kxe"]
+[ext_resource type="Script" path="res://Scripts/FreecamScript.gd" id="6_c71ra"]
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_4uu6y"]
 render_priority = 0
@@ -194,7 +194,7 @@ transform = Transform3D(0.296382, 0, 0.954389, 0, 0.99935, 0, -0.954389, 0, 0.29
 current = true
 fov = 70.0
 far = 2000.0
-script = ExtResource("4_fh5v0")
+script = ExtResource("6_c71ra")
 
 [node name="WorldEnvironment" type="WorldEnvironment" parent="."]
 environment = SubResource("Environment_tpq1j")
@@ -212,7 +212,7 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
-metadata/TimeCompression = 0.0
+metadata/TimeCompression = 1.0
 metadata/MET = 0.0
 
 [node name="Temporal" type="MarginContainer" parent="Control"]
@@ -228,9 +228,9 @@ offset_top = -100.0
 grow_horizontal = 0
 grow_vertical = 0
 pivot_offset = Vector2(200, 0)
-theme_override_constants/margin_top = 5
-theme_override_constants/margin_right = 5
-theme_override_constants/margin_bottom = 5
+theme_override_constants/margin_top = 0
+theme_override_constants/margin_right = 10
+theme_override_constants/margin_bottom = 10
 
 [node name="VBX" type="VBoxContainer" parent="Control/Temporal"]
 layout_direction = 1
@@ -253,8 +253,15 @@ uppercase = true
 [node name="TC" type="Label" parent="Control/Temporal/VBX"]
 layout_mode = 2
 theme_override_font_sizes/font_size = 12
-text = "Compression: 1X 
+text = "
+Compression: 1X 
 [1 sim sec] / [1 real sec]"
+uppercase = true
+
+[node name="Keybinds" type="Label" parent="Control/Temporal/VBX"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 12
+text = "Manipulate with '<', '/', and '>'"
 uppercase = true
 
 [node name="ColorRect" type="ColorRect" parent="Control/Temporal"]

@@ -33,6 +33,10 @@ public partial class AstroProp_Runtime : Node3D
     [Signal]
     public delegate void FrameUpdateEventHandler();
 
+    // References that will be set after the first ready() event
+    Godot.Control Control;
+
+
     public void SY4(ref Godot.Vector3 PosCartesian, ref Godot.Vector3 VelCartesian, Godot.Vector3 InstantaneousAccel, double MET, ref CelestialRender MainSatelliteProx)
     {
         double curt2 = 1.25992104989;
@@ -239,6 +243,7 @@ public partial class AstroProp_Runtime : Node3D
 
             
         }
+
     }
     
     public class ProjectOry
@@ -297,10 +302,10 @@ public partial class AstroProp_Runtime : Node3D
 
     )
     {
-        GD.Print(
-            ProjectOry,
-            ParentRef
-            );
+        //GD.Print(
+        //    ProjectOry,
+        //    ParentRef
+        //    );
         Godot.OrmMaterial3D LineMat = new Godot.OrmMaterial3D();
         LineMat.ShadingMode = BaseMaterial3D.ShadingModeEnum.PerPixel; 
         
@@ -375,7 +380,7 @@ public partial class AstroProp_Runtime : Node3D
                 LocalLineMesh = NewPacket.LineObj;
                 LocalImmediateMesh = NewPacket.TrackStripMesh;
                 LocalImmediateMesh.SurfaceAddVertex((LS_P - FindStateSOI(MainSOISatellite,(int)Iter_Frame.MET).PosCartesian) * (float)ScaleConversion("ToUnityUnits"));
-                GD.Print("NewLine!! local to moon");
+                //GD.Print("NewLine!! local to moon");
                 LastLocalDistance = (LS_P - FindStateSOI(MainSOISatellite, (int)Iter_Frame.MET).PosCartesian);
             }
             
@@ -511,8 +516,8 @@ public partial class AstroProp_Runtime : Node3D
                     }
                     LastApoGlobal = Apo;
                     LastApoGlobal_Distance = LastGlobalDistance.Length();
-                    GD.Print("Apo " + ((int)LastGlobalDistance.Length() / 100) / 10 + " [km]");
-                    GD.Print(LS_V+" [m/s}");
+                   // GD.Print("Apo " + ((int)LastGlobalDistance.Length() / 100) / 10 + " [km]");
+                   // GD.Print(LS_V+" [m/s}");
                 }
                 if ((LastGlobalDistance_Rate < 0) & (LastPeriGlobal_Distance > LastGlobalDistance.Length())) // & !(LGD_SE == 1) you may remove this last statement once you have double precision, some weird stuff.
                 {
@@ -541,7 +546,7 @@ public partial class AstroProp_Runtime : Node3D
                    
                     LastPeriGlobal = CA;
                     LastPeriGlobal_Distance = LastGlobalDistance.Length();
-                    GD.Print("CA " + ((int)LastGlobalDistance.Length() / 100) / 10 + " [km]");
+                   // GD.Print("CA " + ((int)LastGlobalDistance.Length() / 100) / 10 + " [km]");
 
                 }
             }
@@ -550,7 +555,7 @@ public partial class AstroProp_Runtime : Node3D
             //ProjectOry.TrackStripMesh.SurfaceAddVertex(LS_P*(float)ScaleConversion("ToUnityUnits"));
             // GD.Print(LS_P * (float)ScaleConversion("ToUnityUnits"));
         };
-        GD.Print("Projected");
+        //GD.Print("Projected");
         //GD.Print(LS_P * (float)ScaleConversion("ToUnityUnits"));
         // GD.Print("Done rendering");
         //GD.Print(ProjectOry.Trajectory);
@@ -564,7 +569,7 @@ public partial class AstroProp_Runtime : Node3D
     }
     public void RunBallisticTrack(
 
-           NBodyAffected Vessel
+          NBodyAffected Vessel
     )
     {
         double OrbitalPeriod = CalculateOrbital(
@@ -574,7 +579,7 @@ public partial class AstroProp_Runtime : Node3D
             new Godot.Vector3(),
             Reference.SOI.MainReference.GravitationalParameter
             );
-        GD.Print((OrbitalPeriod));
+        //GD.Print((OrbitalPeriod));
         Vessel.Trajectory = new ProjectOry(
             Vessel.ObjectRef,
             "Ballistic Trajectory",
@@ -781,7 +786,7 @@ public partial class AstroProp_Runtime : Node3D
         
 
             
-        GD.Print("Projected");
+        //GD.Print("Projected");
         //GD.Print(LS_P * (float)ScaleConversion("ToUnityUnits"));
         // GD.Print("Done rendering");
         //GD.Print(ProjectOry.Trajectory);
@@ -823,7 +828,16 @@ public partial class AstroProp_Runtime : Node3D
 
         // y did I make this a func????
     }
-     public void METtoString(ref string MET)
+    public static SegmentStepFrame FindStateNBy(NBodyAffected Nby, int MET)
+    {
+
+        SegmentStepFrame FoundStep = Nby.Trajectory.Trajectory[MET];
+
+        return FoundStep;
+
+
+    }
+    public void METtoString(ref string MET)
     {
         float MET_float = MET.ToFloat();
         int Days = (int)System.Math.Floor((MET_float) / (60 * 60 * 24));
@@ -873,7 +887,8 @@ public partial class AstroProp_Runtime : Node3D
         METtoString(ref MTS_PlaceHolder);
         Time.Text =  MTS_PlaceHolder  + " [DD:HH:MM:SS]"; // code here for secs to mins and hours and days
 
-        TC.Text = Reference.Dynamics.TimeCompression + "X " + "[Simulated/Real]";
+        TC.Text = "\n" +
+            Reference.Dynamics.TimeCompression + "X " + "[Simulated/Real]";
         // 00:00:00:00
 
         EmitSignal(SignalName.FrameUpdate);
@@ -949,10 +964,11 @@ public partial class AstroProp_Runtime : Node3D
                 if ((SpatialEventManager[i] != null))//& IsInstanceIdValid(SpatialEventManager[i].Address.GetInstanceId()))// IsInsideTree
 
                 {
+                    
                     //GD.Print((SpatialEventManager[i].Address.IsNodeReady()), SpatialEventManager[i].Address.IsInsideTree());
-                    if (SpatialEventManager[i].Address.IsNodeReady() == false)//(SpatialEventManager[i].Address.IsQueuedForDeletion()) // garbage collections
+                    if (IsInstanceValid(SpatialEventManager[i].Address) != true)//(SpatialEventManager[i].Address.IsQueuedForDeletion()) // garbage collections
                     {
-                        SpatialEventManager[i].Address.QueueFree();
+                        //SpatialEventManager[i].Address.QueueFree(); // already freed, as it is not returning a valid instance
                         //GD.Print("Qeued One");
                         SpatialEventManager[i] = null;
                     }
@@ -1025,7 +1041,7 @@ public partial class AstroProp_Runtime : Node3D
 
             {
                 //GD.Print((SpatialEventManager[i].Address.IsNodeReady()), SpatialEventManager[i].Address.IsInsideTree());
-                if (TiedNodeEventManger[i].Victim.IsNodeReady() == false)//(SpatialEventManager[i].Address.IsQueuedForDeletion()) // garbage collections
+                if (IsInstanceValid(TiedNodeEventManger[i].Victim) != true)//(SpatialEventManager[i].Address.IsQueuedForDeletion()) // garbage collections
                 {
                     //SpatialEventManager[i].Address.QueueFree(); cannot free queue as it has spatial events hosted under the node
                     //GD.Print("Qeued One");
@@ -1321,7 +1337,7 @@ public partial class AstroProp_Runtime : Node3D
         
            */
         
-    }
+    } //deprecated
 
     public static Godot.Node3D NewSpatialEvent(string EventName, int MET, string Description, Color Color)
     {
@@ -1386,14 +1402,7 @@ public partial class AstroProp_Runtime : Node3D
         // GD.Print(PosCartesian);
         //.transform.position = PosCartesian;
     }
-    public void GrowTrack(NBodyAffected Object, int MET)
-    {
-         // simple, straightforwards.
-    }
-    public void TrimTrack(NBodyAffected Object, int MET)
-    {
-        // you will need to entirely reassemble the mesh if you want to remove one vertice
-    }
+    
     void BeginStepOps()
     {
         
@@ -1449,12 +1458,44 @@ public partial class AstroProp_Runtime : Node3D
             MoveNBy(NBodyAffected, Reference.Dynamics.MET);
             //Debug.Log(CelestialRender.Name.ToString());
         }
+        //VectorRefresh();
+    }
 
+    void VectorRefresh()
+    {
+       
+        for (int i = 0; i < NByContainers.Count; i++) // do NOT EVER use foreach, it is read only.
+        {
+            Godot.Vector3 StatePosition = NByContainers[i].StateVectors.PosCartesian;
+            SegmentStepFrame ProjectedState = FindStateNBy(NByContainers[i], (int)System.Math.Floor(Reference.Dynamics.MET));
+            GD.Print(StatePosition);
+            GD.Print(ProjectedState.StateVectors.PosCartesian);
+            Godot.Vector3 Difference = StatePosition - ProjectedState.StateVectors.PosCartesian;
+            if (Difference.Length() > 5)
+            {
+                if (NByContainers[i].Trajectory.ObjectRef != null)
+                {
+                    NByContainers[i].Trajectory.ObjectRef.QueueFree();
+                    NByContainers[i].Trajectory.ObjectRef = null;
+                }
+                
+               
+                //NByContainers[i].Trajectory.ObjectRef.GetParent().RemoveChild(NByContainers[i].Trajectory.ObjectRef);
+                RunBallisticTrack(NByContainers[i]); //this is causing lag
+            }
+           
+
+            GD.Print(Difference.Length());
+            //NBodyAffected Overwrite = NByContainers[i];
+
+
+        }
     }
 
     // Start is called before the first frame update
     public override void _Ready()
     {
+        Control = GetNode<Godot.Control>("Control");
         //Reference.Dynamics.TimeCompression = 1;
         // GD.Print("Boostrapper Startup");
         // Line ends after this, wtf???
@@ -1507,22 +1548,24 @@ public partial class AstroProp_Runtime : Node3D
             //GD.Print(Overwrite.Ephemeris[30].PosCartesian);
         }
         //GD.Print(KeplerContainers[1].Ephemeris[1].MET);
-       // GD.Print(KeplerContainers[1].Ephemeris[2].MET);
-       // GD.Print(KeplerContainers[1].Ephemeris[30].MET);
-        foreach (var NBodyAffected in NByContainers)
+        // GD.Print(KeplerContainers[1].Ephemeris[2].MET);
+        // GD.Print(KeplerContainers[1].Ephemeris[30].MET);
+        for (int i = 0; i < NByContainers.Count; i++) // do NOT EVER use foreach, it is read only.
         {
-            RunBallisticTrack(NBodyAffected);
+            RunBallisticTrack(NByContainers[i]);
         }
         // Debug.Log(Reference.SOI.KeplerContainer);
         // Reference.SOI.PrintProperties()
-
+        //Task.Delay(20000);
+        //VectorRefresh();
     }
     public double LastStep = 0;
     public double NextStep = Time.GetUnixTimeFromSystem() + Reference.Dynamics.TimeStep / (Reference.Dynamics.TimeCompression);
-    
+    public int RefreshKey = 60 * 2;//60 secs * 2 mins 
     public override void _Process(double Delta)
     {
-       // Reference.Dynamics.TimeCompression = GetNode<Control>("Control").GetMeta("TimeCompression", new float = 1.0)); just change from witin another script
+        // Reference.Dynamics.TimeCompression = GetNode<Control>("Control").GetMeta("TimeCompression", new float = 1.0)); just change from witin another script
+        Reference.Dynamics.TimeCompression = (double)Control.GetMeta("TimeCompression");
         double RealTimeInterpolate = Reference.Dynamics.MET;
         bool debug = false;
 
@@ -1538,7 +1581,11 @@ public partial class AstroProp_Runtime : Node3D
             {
                 Reference.Dynamics.MET += Reference.Dynamics.TimeStep;
                 BeginStepOps();
-
+                if ((Reference.Dynamics.MET/ RefreshKey) == System.Math.Round(Reference.Dynamics.MET / RefreshKey))
+                {
+                    VectorRefresh();
+                }
+                
             };
 
             RealTimeInterpolate = Reference.Dynamics.MET;
@@ -1555,6 +1602,7 @@ public partial class AstroProp_Runtime : Node3D
             float LerpFloat = (float)(1-(Reference.Dynamics.MET-RealTimeInterpolate));
             Godot.Vector3 LerpV3 = NBodyAffected.StateVectors.PosCartesian - NBodyAffected.StateVectors.PrevPosLerp;
            // GD.Print(LerpFloat,NBodyAffected.StateVectors.PrevPosLerp);
+          // if NBodyAffected.ObjectRef
             NBodyAffected.ObjectRef.Position = (float)ScaleConversion("ToUnityUnits")*(NBodyAffected.StateVectors.PrevPosLerp + LerpV3 * LerpFloat);
 
 
@@ -1574,7 +1622,8 @@ public partial class AstroProp_Runtime : Node3D
         UpdateTemporal();
         UpdateTiedNodes();
         // Debug.Log((RealTimeInterpolate));
-
+        
+        Control.SetMeta("Met", Reference.Dynamics.MET);
         // AstroProp_Runtime.Reference.Dynamics.StandardGravParam += 1;
         // Debug.Log(AstroProp_Runtime.Reference.Dynamics.StandardGravParam.ToString()); ;
     }
