@@ -337,7 +337,7 @@ public partial class AstroProp_Runtime : Node3D
         ProjectOry.Trajectory = new Dictionary<int, SegmentStepFrame>(10000000);
         Godot.Vector3 LastVertexPosGlobalSpace = LS_P * (float)ScaleConversion("ToUnityUnits");
 
-
+        float SegmentLength = (float).5; //SegmentLength
 
 
         CelestialRender MainSOISatellite = null;
@@ -414,7 +414,7 @@ public partial class AstroProp_Runtime : Node3D
                 LocalLineMesh = null; //set the null reference, freeing the temporary local track mesh, while also closing it and setting its parent
                 LocalImmediateMesh = null;
             }
-            if ((NewGlobalSpace -LastVertexPosGlobalSpace).Length() > .05)
+            if ((NewGlobalSpace -LastVertexPosGlobalSpace).Length() > SegmentLength)
             {
                 LastVertexPosGlobalSpace = NewGlobalSpace;
                 ProjectOry.TrackStripMesh.SurfaceAddVertex(NewGlobalSpace);
@@ -512,7 +512,7 @@ public partial class AstroProp_Runtime : Node3D
                     Apo.Position = (LS_P) * (float)ScaleConversion("ToUnityUnits");
                     if (LastApoGlobal != null)
                     {
-                        ProjectOry.ObjectRef.RemoveChild(LastApoGlobal); // may need to sanity check here, just in case it cannot realize that null is not a node. food 4 thought. Yep, correct
+                        LastApoGlobal.QueueFree(); // may need to sanity check here, just in case it cannot realize that null is not a node. food 4 thought. Yep, correct
                     }
                     LastApoGlobal = Apo;
                     LastApoGlobal_Distance = LastGlobalDistance.Length();
@@ -541,7 +541,7 @@ public partial class AstroProp_Runtime : Node3D
                     CA.Position = (LS_P * (float)ScaleConversion("ToUnityUnits"));
                     if (LastPeriGlobal != null)
                     {
-                        ProjectOry.ObjectRef.RemoveChild(LastPeriGlobal); ; // may need to sanity check here, just in case it cannot realize that null is not a node. food 4 thought. Yep, correct
+                        LastPeriGlobal.QueueFree(); ; // may need to sanity check here, just in case it cannot realize that null is not a node. food 4 thought. Yep, correct
                     }
                    
                     LastPeriGlobal = CA;
@@ -1574,14 +1574,14 @@ public partial class AstroProp_Runtime : Node3D
         if (Time.GetUnixTimeFromSystem() >= NextStep & (! debug)) 
         {
             int OverfillFrame = (int)Math.Ceiling((Time.GetUnixTimeFromSystem() - NextStep) / (1 / (Reference.Dynamics.TimeCompression))); //(int)Math.Ceiling(Time.time - NextStep);
-          // overfillframe just gives UnixTime for some reason?? fixed --10052023 jcr
+          // overfillframe just gives UnixTime for some reason?? fixed --10052023
             LastStep = Time.GetUnixTimeFromSystem();
             NextStep = (Time.GetUnixTimeFromSystem()) + Reference.Dynamics.TimeStep / (Reference.Dynamics.TimeCompression);
             for (int i = 0; i < OverfillFrame; i++)
             {
                 Reference.Dynamics.MET += Reference.Dynamics.TimeStep;
                 BeginStepOps();
-                if ((Reference.Dynamics.MET/ RefreshKey) == System.Math.Round(Reference.Dynamics.MET / RefreshKey))
+                if ((Reference.Dynamics.MET/ RefreshKey) == System.Math.Round(Reference.Dynamics.MET / RefreshKey)) //need to find a better way to do this, perhaps instead of MET based, realtime based?
                 {
                     VectorRefresh();
                 }
