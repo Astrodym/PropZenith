@@ -376,7 +376,7 @@ public partial class AstroProp_Runtime : Node3D
 
             if (!(MainSOISatellite == null) & (LocalLineMesh == null))
             {
-                NLM_ReturnPacket NewPacket = NewLineMesh(Color.FromHtml("#66ff66"));
+                NLM_ReturnPacket NewPacket = NewLineMesh(Color.FromHtml("#00ff80"));
                 LocalLineMesh = NewPacket.LineObj;
                 LocalImmediateMesh = NewPacket.TrackStripMesh;
                 LocalImmediateMesh.SurfaceAddVertex((LS_P - FindStateSOI(MainSOISatellite,(int)Iter_Frame.MET).PosCartesian) * (float)ScaleConversion("ToUnityUnits"));
@@ -443,7 +443,7 @@ public partial class AstroProp_Runtime : Node3D
                             "RDIST "+ (Math.Round(LastLocalDistance.Length()/100)) /10 + " [km]" + //tolerance of one decimal ((int)dist/100)/10
                             "\r\n" +
                             "RVEL "+ Math.Abs((int)LastLocalDistance_Rate) + " [m/s]", 
-                            Color.FromHtml("#66ff66"));
+                            Color.FromHtml("#00ff80"));
 
                         
                         SpatialEventData SED = new SpatialEventData();
@@ -465,7 +465,7 @@ public partial class AstroProp_Runtime : Node3D
                            "RDIST " + (Math.Round(LastLocalDistance.Length() / 100)) / 10 + " [km]" + //tolerance of one decimal ((int)dist/100)/10
                            "\r\n" +
                            "RVEL " + Math.Abs((int)LastLocalDistance_Rate) + " [m/s]",
-                           Color.FromHtml("#66ff66"));
+                           Color.FromHtml("#00ff80"));
                        
                         SpatialEventData SED = new SpatialEventData();
                         SED.Address = CA;
@@ -1606,62 +1606,64 @@ public partial class AstroProp_Runtime : Node3D
         
         double RealTimeInterpolate = Reference.Dynamics.MET;
         bool debug = false;
-        if (Reference.Dynamics.TimeCompression < 1)
+        if (Reference.Dynamics.TimeCompression >= 1)
         {
-            return;
-        }
-        
-       // GD.Print((int)Math.Ceiling((Time.GetUnixTimeFromSystem() - NextStep) / (1 / (Reference.Dynamics.TimeCompression))));
-        if (Time.GetUnixTimeFromSystem() >= NextStep & (! debug)) 
-        {
-            int OverfillFrame = (int)Math.Ceiling((Time.GetUnixTimeFromSystem() - NextStep) / (1 / (Reference.Dynamics.TimeCompression))); //(int)Math.Ceiling(Time.time - NextStep);
-          // overfillframe just gives UnixTime for some reason?? fixed --10052023
-            LastStep = Time.GetUnixTimeFromSystem();
-            NextStep = (Time.GetUnixTimeFromSystem()) + Reference.Dynamics.TimeStep / (Reference.Dynamics.TimeCompression);
-            for (int i = 0; i < OverfillFrame; i++)
+            //return;
+
+
+            // GD.Print((int)Math.Ceiling((Time.GetUnixTimeFromSystem() - NextStep) / (1 / (Reference.Dynamics.TimeCompression))));
+            if (Time.GetUnixTimeFromSystem() >= NextStep & (!debug))
             {
-                Reference.Dynamics.MET += Reference.Dynamics.TimeStep;
-                BeginStepOps();
-                if ((Reference.Dynamics.MET/ RefreshKey) == System.Math.Round(Reference.Dynamics.MET / RefreshKey)) //need to find a better way to do this, perhaps instead of MET based, realtime based?
+                int OverfillFrame = (int)Math.Ceiling((Time.GetUnixTimeFromSystem() - NextStep) / (1 / (Reference.Dynamics.TimeCompression))); //(int)Math.Ceiling(Time.time - NextStep);
+                                                                                                                                               // overfillframe just gives UnixTime for some reason?? fixed --10052023
+                LastStep = Time.GetUnixTimeFromSystem();
+                NextStep = (Time.GetUnixTimeFromSystem()) + Reference.Dynamics.TimeStep / (Reference.Dynamics.TimeCompression);
+                for (int i = 0; i < OverfillFrame; i++)
                 {
-                    VectorRefresh();
-                }
-                
-            };
+                    Reference.Dynamics.MET += Reference.Dynamics.TimeStep;
+                    BeginStepOps();
+                    if ((Reference.Dynamics.MET / RefreshKey) == System.Math.Round(Reference.Dynamics.MET / RefreshKey)) //need to find a better way to do this, perhaps instead of MET based, realtime based?
+                    {
+                        VectorRefresh();
+                    }
 
-            RealTimeInterpolate = Reference.Dynamics.MET;
-        }
-        else
-        {
-            RealTimeInterpolate = Reference.Dynamics.MET + (Time.GetUnixTimeFromSystem() - NextStep);
+                };
 
-        }
-       // Reference.Dynamics.TimeCompression = 2;
-        foreach (var NBodyAffected in NByContainers)
-        {
-            //GD.Print(RealTimeInterpolate);
-            float LerpFloat = (float)(1-(Reference.Dynamics.MET-RealTimeInterpolate));
-            Godot.Vector3 LerpV3 = NBodyAffected.StateVectors.PosCartesian - NBodyAffected.StateVectors.PrevPosLerp;
-           // GD.Print(LerpFloat,NBodyAffected.StateVectors.PrevPosLerp);
-          // if NBodyAffected.ObjectRef
-            NBodyAffected.ObjectRef.Position = (float)ScaleConversion("ToUnityUnits")*(NBodyAffected.StateVectors.PrevPosLerp + LerpV3 * LerpFloat);
+                RealTimeInterpolate = Reference.Dynamics.MET;
+            }
+            else
+            {
+                RealTimeInterpolate = Reference.Dynamics.MET + (Time.GetUnixTimeFromSystem() - NextStep);
+
+            }
+            // Reference.Dynamics.TimeCompression = 2;
+            foreach (var NBodyAffected in NByContainers)
+            {
+                //GD.Print(RealTimeInterpolate);
+                float LerpFloat = (float)(1 - (Reference.Dynamics.MET - RealTimeInterpolate));
+                Godot.Vector3 LerpV3 = NBodyAffected.StateVectors.PosCartesian - NBodyAffected.StateVectors.PrevPosLerp;
+                // GD.Print(LerpFloat,NBodyAffected.StateVectors.PrevPosLerp);
+                // if NBodyAffected.ObjectRef
+                NBodyAffected.ObjectRef.Position = (float)ScaleConversion("ToUnityUnits") * (NBodyAffected.StateVectors.PrevPosLerp + LerpV3 * LerpFloat);
 
 
 
-            //NBodyAffected.ObjectRef.Position = NBodyAffected.StateVectors.PosCartesian*(float)ScaleConversion("ToUnityUnits") + LerpV3 * LerpFloat;
-            //GD.Print(NBodyAffected.StateVectors.PosCartesian);
-            //Debug.Log(CelestialRender.Name.ToString());
-        }
+                //NBodyAffected.ObjectRef.Position = NBodyAffected.StateVectors.PosCartesian*(float)ScaleConversion("ToUnityUnits") + LerpV3 * LerpFloat;
+                //GD.Print(NBodyAffected.StateVectors.PosCartesian);
+                //Debug.Log(CelestialRender.Name.ToString());
+            }
 
-        foreach (var CelestialRender in KeplerContainers)
-        {
-            //eventually you will have to interpolate the celestials
+            foreach (var CelestialRender in KeplerContainers)
+            {
+                //eventually you will have to interpolate the celestials
 
-            //MoveCelestial(CelestialRender, RealTimeInterpolate);
-            //Debug.Log(CelestialRender.Name.ToString());
+                //MoveCelestial(CelestialRender, RealTimeInterpolate);
+                //Debug.Log(CelestialRender.Name.ToString());
+            }
+            UpdateTiedNodes();
         }
         UpdateTemporal();
-        UpdateTiedNodes();
+        
         // Debug.Log((RealTimeInterpolate));
         
         Control.SetMeta("Met", Reference.Dynamics.MET);
