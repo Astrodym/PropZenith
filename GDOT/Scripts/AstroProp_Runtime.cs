@@ -460,7 +460,7 @@ public partial class AstroProp_Runtime : Node3D
                     else
                     {
                         Godot.Node3D CA = NewSpatialEvent(
-                           "CLOSEST [PERI]",
+                           "[PERI]",
                            (int)Iter_Frame.MET,
                            "RDIST " + (Math.Round(LastLocalDistance.Length() / 100)) / 10 + " [km]" + //tolerance of one decimal ((int)dist/100)/10
                            "\r\n" +
@@ -494,12 +494,12 @@ public partial class AstroProp_Runtime : Node3D
                 {
                     LGD_SE = 0;
                     Godot.Node3D Apo = NewSpatialEvent(
-                        "FURTHEST [APO]",
+                        "[APO]",
                         (int)Iter_Frame.MET,
                         "GDIST " + (Math.Round(LastGlobalDistance.Length() / 100)) / 10 + " [km]" + //tolerance of one decimal ((int)dist/100)/10
                         "\r\n" +
                         "GVEL " + Math.Abs((int)LastGlobalDistance_Rate) + " [m/s]",
-                        Color.FromHtml("#66ff66"));
+                        Color.FromHtml("#FF14AF"));
                     
                     SpatialEventData SED = new SpatialEventData();
                     SED.Address = Apo;
@@ -528,7 +528,7 @@ public partial class AstroProp_Runtime : Node3D
                        "GDIST " + (Math.Round(LastGlobalDistance.Length() / 100)) / 10 + " [km]" + //tolerance of one decimal ((int)dist/100)/10
                        "\r\n" +
                        "GVEL " + Math.Abs((int)LastGlobalDistance_Rate) + " [m/s]",
-                       Color.FromHtml("#66ff66"));
+                       Color.FromHtml("#FF14AF"));
                     
                     SpatialEventData SED = new SpatialEventData();
                     SED.Address = CA;
@@ -830,6 +830,10 @@ public partial class AstroProp_Runtime : Node3D
     }
     public static SegmentStepFrame FindStateNBy(NBodyAffected Nby, int MET)
     {
+        if (!Nby.Trajectory.Trajectory.ContainsKey(MET))
+        {
+            return null;
+        }
 
         SegmentStepFrame FoundStep = Nby.Trajectory.Trajectory[MET];
 
@@ -1466,13 +1470,45 @@ public partial class AstroProp_Runtime : Node3D
        
         for (int i = 0; i < NByContainers.Count; i++) // do NOT EVER use foreach, it is read only.
         {
-            Godot.Vector3 StatePosition = NByContainers[i].StateVectors.PosCartesian;
+            int LastMeta = (int)Control.GetMeta("TimeCompression");
+            Godot.Vector3 StateVVector = NByContainers[i].StateVectors.VelCartesian;
             SegmentStepFrame ProjectedState = FindStateNBy(NByContainers[i], (int)System.Math.Floor(Reference.Dynamics.MET));
-            GD.Print(StatePosition);
-            GD.Print(ProjectedState.StateVectors.PosCartesian);
-            Godot.Vector3 Difference = StatePosition - ProjectedState.StateVectors.PosCartesian;
+            if (ProjectedState == null)
+            {
+                Control.SetMeta("TimeCompression", 0);
+                Control.SetMeta("InfoText", "" +
+                    "[PROCESS]" + NByContainers[i].Name +
+                    "\r\n" +
+                    "NO STATE FOUND" +
+                    "\r\n\r\n" +
+                    "TRAJECTORY RECASTED (NEW TRACK)");
+                Control.SetMeta("InfoStatus", "[COMPUTE] [INTERUPT] ");
+                //Task.Delay(200);
+
+                
+                NByContainers[i].Trajectory.ObjectRef.QueueFree();
+                NByContainers[i].Trajectory.ObjectRef = null;
+                
+
+                RunBallisticTrack(NByContainers[i]);
+                Control.SetMeta("TimeCompression", 1);
+                break;
+            }
+            GD.Print(StateVVector);
+            GD.Print(ProjectedState.StateVectors.VelCartesian);
+            Godot.Vector3 Difference = StateVVector - ProjectedState.StateVectors.VelCartesian;
             if (Difference.Length() > 5)
             {
+                Control.SetMeta("TimeCompression", 0);
+                Control.SetMeta("InfoText", "" +
+                    "[PROCESS] " + NByContainers[i].Name +
+                    "\r\n" +
+                    "STATE DIVERGED OUT OF TOLERANCE: " + Difference.Length().ToString() + " [m/s] " + Reference.Dynamics.MET.ToString() +
+                    "\r\n\r\n" +
+                    "TRAJECTORY RECASTED (NEW TRACK)");
+                Control.SetMeta("InfoStatus", "[COMPUTE] [INTERUPT] ");
+                //Task.Delay(200);
+                
                 if (NByContainers[i].Trajectory.ObjectRef != null)
                 {
                     NByContainers[i].Trajectory.ObjectRef.QueueFree();
@@ -1482,6 +1518,7 @@ public partial class AstroProp_Runtime : Node3D
                
                 //NByContainers[i].Trajectory.ObjectRef.GetParent().RemoveChild(NByContainers[i].Trajectory.ObjectRef);
                 RunBallisticTrack(NByContainers[i]); //this is causing lag
+                Control.SetMeta("TimeCompression", 1);
             }
            
 
@@ -1561,14 +1598,18 @@ public partial class AstroProp_Runtime : Node3D
     }
     public double LastStep = 0;
     public double NextStep = Time.GetUnixTimeFromSystem() + Reference.Dynamics.TimeStep / (Reference.Dynamics.TimeCompression);
-    public int RefreshKey = 60 * 2;//60 secs * 2 mins 
+    public int RefreshKey = 60 * 30;//60 secs * 30 = 30 mins refresh check
     public override void _Process(double Delta)
     {
         // Reference.Dynamics.TimeCompression = GetNode<Control>("Control").GetMeta("TimeCompression", new float = 1.0)); just change from witin another script
         Reference.Dynamics.TimeCompression = (double)Control.GetMeta("TimeCompression");
+        
         double RealTimeInterpolate = Reference.Dynamics.MET;
         bool debug = false;
-
+        if (Reference.Dynamics.TimeCompression < 1)
+        {
+            return;
+        }
         
        // GD.Print((int)Math.Ceiling((Time.GetUnixTimeFromSystem() - NextStep) / (1 / (Reference.Dynamics.TimeCompression))));
         if (Time.GetUnixTimeFromSystem() >= NextStep & (! debug)) 

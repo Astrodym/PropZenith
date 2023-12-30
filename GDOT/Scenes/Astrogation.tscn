@@ -1,4 +1,4 @@
-[gd_scene load_steps=13 format=3 uid="uid://m72oaa82j0x7"]
+[gd_scene load_steps=14 format=3 uid="uid://m72oaa82j0x7"]
 
 [ext_resource type="Script" path="res://Scripts/AstroProp_Runtime.cs" id="1_o5ibn"]
 [ext_resource type="SphereMesh" uid="uid://hvpsax33j75w" path="res://Prefabs/SOIbasic.tres" id="3_yje6v"]
@@ -6,6 +6,7 @@
 [ext_resource type="Shader" uid="uid://diy6hc1jsalyx" path="res://Shaders/PlaceholderShader.tres" id="4_svrnh"]
 [ext_resource type="Texture2D" uid="uid://dumnwlufvcnki" path="res://Shaders/Textures/SmoothNode.png" id="4_v7kxe"]
 [ext_resource type="Script" path="res://Scripts/FreecamScript.gd" id="6_c71ra"]
+[ext_resource type="Script" path="res://Scripts/ControlScript.gd" id="7_5f7ta"]
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_4uu6y"]
 render_priority = 0
@@ -27,6 +28,7 @@ shader = ExtResource("4_svrnh")
 
 [sub_resource type="Environment" id="Environment_tpq1j"]
 background_mode = 1
+background_color = Color(0.0313726, 0.0313726, 0.0588235, 1)
 ambient_light_source = 2
 ambient_light_color = Color(0.0117647, 0.0235294, 0.0901961, 1)
 ambient_light_energy = 1.63
@@ -108,14 +110,6 @@ font_size = 35
 outline_size = 0
 horizontal_alignment = 0
 vertical_alignment = 2
-
-[node name="OmniLight3D" type="OmniLight3D" parent="Global/Earth"]
-transform = Transform3D(0.99935, 0, 0, 0, 0.99935, 0, 0, 0, 0.99935, 0, 0, 0)
-light_intensity_lumens = 100000.0
-light_temperature = 6765.0
-light_color = Color(0.0941176, 0.435294, 1, 1)
-light_energy = 300.0
-omni_range = 501.358
 
 [node name="Sagitta" type="Node3D" parent="Global"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 5.322, 0, 0)
@@ -212,8 +206,11 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
+script = ExtResource("7_5f7ta")
 metadata/TimeCompression = 1.0
 metadata/MET = 0.0
+metadata/InfoText = ""
+metadata/InfoStatus = ""
 
 [node name="Temporal" type="MarginContainer" parent="Control"]
 layout_direction = 1
@@ -268,7 +265,130 @@ uppercase = true
 z_index = -1
 layout_direction = 1
 layout_mode = 2
-color = Color(0.215686, 0.215686, 0.215686, 0.784314)
+color = Color(0, 0, 0, 1)
+
+[node name="Border" type="ColorRect" parent="Control/Temporal/ColorRect"]
+z_index = -1
+layout_direction = 1
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = -1.0
+offset_top = -1.0
+offset_right = 1.0
+offset_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0, 1, 0.501961, 0.419608)
+
+[node name="Notify" type="MarginContainer" parent="Control"]
+layout_direction = 1
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -251.0
+offset_top = 126.0
+offset_right = 249.0
+offset_bottom = 176.0
+grow_horizontal = 2
+grow_vertical = 2
+pivot_offset = Vector2(250, 0)
+theme_override_constants/margin_top = 0
+theme_override_constants/margin_right = 0
+theme_override_constants/margin_bottom = 20
+
+[node name="ColorRect" type="ColorRect" parent="Control/Notify"]
+z_index = -1
+layout_direction = 1
+layout_mode = 2
+color = Color(0, 0, 0, 1)
+
+[node name="Border" type="ColorRect" parent="Control/Notify/ColorRect"]
+z_index = -1
+layout_direction = 1
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = -1.0
+offset_top = -1.0
+offset_right = 1.0
+offset_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0, 1, 0.501961, 0.419608)
+
+[node name="Title" type="Label" parent="Control/Notify"]
+modulate = Color(0, 1, 0.501961, 1)
+layout_mode = 2
+theme_override_font_sizes/font_size = 12
+text = " TIME COMPRESSION: 1X"
+horizontal_alignment = 1
+uppercase = true
+
+[node name="Info" type="MarginContainer" parent="Control"]
+layout_direction = 1
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -250.0
+offset_top = 161.0
+offset_right = 250.0
+offset_bottom = 241.0
+grow_horizontal = 2
+grow_vertical = 2
+pivot_offset = Vector2(250, 0)
+theme_override_constants/margin_top = 0
+theme_override_constants/margin_right = 0
+theme_override_constants/margin_bottom = 0
+
+[node name="ColorRect" type="ColorRect" parent="Control/Info"]
+z_index = -1
+layout_direction = 1
+layout_mode = 2
+color = Color(0, 0, 0, 1)
+
+[node name="Border" type="ColorRect" parent="Control/Info/ColorRect"]
+z_index = -1
+layout_direction = 1
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = -1.0
+offset_top = -1.0
+offset_right = 1.0
+offset_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0, 1, 0.501961, 0.419608)
+
+[node name="Title" type="Label" parent="Control/Info"]
+layout_mode = 2
+size_flags_vertical = 1
+theme_override_font_sizes/font_size = 12
+text = "[PROCESS]
+STATE DIVERGED OUT OF TOLERANCE
+
+TRAJECTORY RECASTED (NEW TRACK)"
+uppercase = true
+
+[node name="Status" type="Label" parent="Control/Info"]
+modulate = Color(0.384314, 1, 1, 1)
+layout_mode = 2
+size_flags_vertical = 1
+theme_override_font_sizes/font_size = 12
+text = "[COMPUTE] [INTERUPT] 
+"
+horizontal_alignment = 2
+uppercase = true
 
 [node name="Storage" type="Node3D" parent="."]
 visible = false
