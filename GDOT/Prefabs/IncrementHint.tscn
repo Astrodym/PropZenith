@@ -1,0 +1,32 @@
+[gd_scene load_steps=2 format=3 uid="uid://8ca5hh62km0c"]
+
+[ext_resource type="Texture2D" uid="uid://dumnwlufvcnki" path="res://Shaders/Textures/SmoothNode.png" id="1_qx1ai"]
+
+[node name="IncrementalHint" type="Node3D"]
+
+[node name="SpatialAid" type="Sprite3D" parent="."]
+transform = Transform3D(0.001, -1.53335e-11, -1.81899e-13, 7.66676e-12, 0.002, 3.12865e-11, 1.81899e-13, -6.2573e-11, 0.001, 0, 0, 0)
+transparency = 0.6
+modulate = Color(0, 1, 0.203922, 1)
+billboard = 1
+no_depth_test = true
+fixed_size = true
+texture = ExtResource("1_qx1ai")
+region_rect = Rect2(0, -0.27, 0, 0)
+
+[node name="ShowHide" type="Node3D" parent="."]
+metadata/Pinned = false
+
+[node name="Timestamp" type="Label3D" parent="ShowHide"]
+transform = Transform3D(0.0999996, 0.000241866, -0.00015388, -0.000242885, 0.0999975, -0.000665057, 0.000152267, 0.000665428, 0.0999977, 0, 0, 0)
+transparency = 0.5
+offset = Vector2(20, -60)
+billboard = 1
+no_depth_test = true
+fixed_size = true
+modulate = Color(0, 1, 0.203922, 1)
+text = "d1
+"
+font_size = 35
+outline_size = 0
+horizontal_alignment = 0

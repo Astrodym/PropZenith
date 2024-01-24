@@ -337,7 +337,7 @@ public partial class AstroProp_Runtime : Node3D
         ProjectOry.Trajectory = new Dictionary<int, SegmentStepFrame>(10000000);
         Godot.Vector3 LastVertexPosGlobalSpace = LS_P * (float)ScaleConversion("ToUnityUnits");
 
-        float SegmentLength = (float).5; //SegmentLength
+        float SegmentLength = (float).5; //SegmentLength .5
 
 
         CelestialRender MainSOISatellite = null;
@@ -422,6 +422,20 @@ public partial class AstroProp_Runtime : Node3D
                 {
                     LocalImmediateMesh.SurfaceAddVertex((LS_P - FindStateSOI(MainSOISatellite, (int)Iter_Frame.MET).PosCartesian) * (float)ScaleConversion("ToUnityUnits"));
                 }
+            }
+            if (Math.Round(((decimal)i /(60*60*24))) == (int)((decimal)i / (60 * 60 * 24)))
+            {
+                string TickName = "d" + ((int)((decimal)i / (60 * 60 * 24))).ToString();
+                GD.Print(TickName);
+                //Godot.Node3D Tick = NewIncrementHint(TickName, Color.FromHtml("#FF14AF"));
+                //ProjectOry.ObjectRef.AddChild(Tick);
+                //Tick.Position = (LS_P) * (float)ScaleConversion("ToUnityUnits");
+                //if (!(MainSOISatellite == null) & !(LocalLineMesh == null))
+                //{
+                //    Godot.Node3D TickLocal = NewIncrementHint(TickName, Color.FromHtml("#FF14AF"));
+                //    LocalLineMesh.AddChild(TickLocal);
+                //    TickLocal.Position = (LS_P - FindStateSOI(MainSOISatellite, (int)Iter_Frame.MET).PosCartesian) * (float)ScaleConversion("ToUnityUnits");
+                //}
             }
             if (!(MainSOISatellite == null) & !(LocalLineMesh == null))
             {
@@ -1250,12 +1264,14 @@ public partial class AstroProp_Runtime : Node3D
         LineMat.Roughness = 1;
         LineMat.MetallicSpecular = 0;
         LineMat.AlbedoColor = Color;
-
+        
 
         Godot.MeshInstance3D LineObj = new Godot.MeshInstance3D(); // the track itself
         Godot.ImmediateMesh TrackStripMesh = new Godot.ImmediateMesh();
         TrackStripMesh.SurfaceBegin(Godot.Mesh.PrimitiveType.LineStrip, LineMat);
+        
         LineObj.Mesh = TrackStripMesh;
+        LineObj.CastShadow = 0;
 
         
 
@@ -1381,7 +1397,42 @@ public partial class AstroProp_Runtime : Node3D
         return SE; //leave everything else (position, parent) to whatever called the method
         //Godot.PackedScene NSE = AstroProp_Runtime.GetNode<PackedScene>("res://Prefabs/NewSpatialEvent");
     }
+    public static Godot.Node3D NewIncrementHint(string EventName, Color Color)
+    {
+        //'Lite' NSE's are just going to hide everything but the spatial aid, so just make the description, time, and name invisible. Declutter.
+        // We will make an event manager later, which manages all of the count-down's and event visbilities each second.
+        //This will just be a list of all of the SE's, iterated through and managed
 
+
+
+        //var packed_scene = load("res://something.tscn")
+        //var scene_node = packed_scene.instance()
+        // var root = get_tree().get_root()
+        //root.add_child(scene_node)
+        bool StillActive = true;
+
+        Godot.PackedScene NSE = (PackedScene)ResourceLoader.Load("res://Prefabs/IncrementHint.tscn"); //you forgot the filetype at the end kek (tscn)
+        Godot.Node3D SE = (Godot.Node3D)NSE.Instantiate();
+
+        Godot.Node3D ShowHide = (Godot.Node3D)SE.GetNode("ShowHide");
+        
+        Godot.Label3D Timestamp = (Godot.Label3D)ShowHide.GetNode("Timestamp");
+        
+        Godot.Sprite3D SpatialAid = (Godot.Sprite3D)SE.GetNode("SpatialAid");
+
+        Timestamp.Text = EventName;
+        //Timestamp.Text = ""; // worry about this later, probably attach it to an event-manager. - DONE!
+      
+        Timestamp.Modulate = Color;
+        SpatialAid.Modulate = Color;
+
+        ShowHide.Visible = true;
+
+
+
+        return SE; //leave everything else (position, parent) to whatever called the method
+        //Godot.PackedScene NSE = AstroProp_Runtime.GetNode<PackedScene>("res://Prefabs/NewSpatialEvent");
+    }
     public void MoveNBy(NBodyAffected Object, double MET)
     {
         float LocalScale = (float)ScaleConversion("ToUnityUnits");
