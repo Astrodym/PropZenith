@@ -11,6 +11,9 @@ var NotifyTimer = 0
 var Info
 var LastInfo = ""
 
+var System
+
+
 func _input(event):
 	
 	if event is InputEventKey and event:
@@ -48,6 +51,9 @@ func SignalInfo(): #make this async
 func _ready():
 	Notify = get_node("Notify")
 	Info = get_node("Info")
+	
+	System = get_node("System")
+	System.get_node("VBX").get_node("Duration").text = "MISSION DURATION [" + str(get_meta("MissionDuration")) + " Days]"
 	pass # Replace with function body.
 
 
